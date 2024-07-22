@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Result__c</fullName>
+    <description>The result of the experiment as a ParentJobResult enum. Either SUCCESS or UNHANDLED_EXCEPTION.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>The result of the experiment as a ParentJobResult enum. Either SUCCESS or UNHANDLED_EXCEPTION.</inlineHelpText>
+    <label>Result</label>
+    <length>255</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

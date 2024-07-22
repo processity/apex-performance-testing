@@ -9,12 +9,13 @@ public with sharing class PerformanceExperiment implements Queueable {
     private Integer stepSize;
     private Integer endSize;
     private Integer repetitions;
-    private String experimentName;
     private PerformanceScenario experiment;
     
     private Integer thisRepetition;
-    private Integer thisStep;
     private PerformanceExperiment thenRun;
+
+    public String experimentName {get; private set;}
+    public Integer thisStep {get; private set;}
     
     public PerformanceExperiment setStartSize(Integer startSize) {
         thisStep = startSize;
@@ -53,6 +54,7 @@ public with sharing class PerformanceExperiment implements Queueable {
     }
 
     public void execute(QueueableContext context) {
+        System.attachFinalizer(new PerformanceExperimentFinalizer(this));
         
         experiment.setup(thisStep);
         LimitsMeasure measure = new LimitsMeasure();
@@ -63,21 +65,30 @@ public with sharing class PerformanceExperiment implements Queueable {
         insert new PerformanceMeasureResult__c(
                 ExperimentName__c = experimentName,
                 Size__c = thisStep,
-                CpuTimeInMs__c = cpuTime
+                CpuTimeInMs__c = cpuTime,
+                Result__c = ParentJobResult.SUCCESS.name()
         );
         
         incrementCounters();
-        
-        if(thisStep <= endSize) {
-            System.enqueueJob(this, 0);
+        requeueIfNecessary();
+    }
+
+    public void requeueIfNecessary() {
+        AsyncOptions options = new AsyncOptions();
+        options.minimumQueueableDelayInMinutes = 0;
+        if(!AsyncInfo.hasMaxStackDepth()) {
+            options.maximumQueueableStackDepth = getRequiredStackDepth();
+        }
+        if (thisStep <= endSize) {
+            System.enqueueJob(this, options);
         } else {
-            if(thenRun != null) {
-                System.enqueueJob(thenRun, 0);
+            if (thenRun != null) {
+                System.enqueueJob(thenRun, options);
             }
         }
     }
 
-    private void incrementCounters() {
+    public void incrementCounters() {
         ++thisRepetition;
         if (thisRepetition >= repetitions) {
             thisRepetition = 0;
@@ -86,7 +97,7 @@ public with sharing class PerformanceExperiment implements Queueable {
     }
     
     private Integer getRequiredStackDepth() {
-        return repetitions * (endSize - thisStep + stepSize)/stepSize + (thenRun?.getRequiredStackDepth() ?? 0);
+        return repetitions * (endSize - thisStep + stepSize)/stepSize + (thenRun?.getRequiredStackDepth() ?? 1);
     }
 
     public void run() {
