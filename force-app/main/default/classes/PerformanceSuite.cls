@@ -9,13 +9,15 @@ public with sharing class PerformanceSuite {
 
     private Iterator<PerformanceScenario> performanceScenariosToRun;
     private Iterator<String> performanceScenarioNames;
+    private String suiteName;
     private Integer startSize;
     private Integer stepSize;
     private Integer endSize;
     private Integer repetitions;
 
-    public PerformanceSuite(List<PerformanceScenario> performanceScenariosToRun) {
+    public PerformanceSuite(String suiteName, List<PerformanceScenario> performanceScenariosToRun) {
         this.performanceScenariosToRun = performanceScenariosToRun.iterator();
+        this.suiteName = suiteName;
         List<String> performanceScenarioNames = new List<String>();
         for(PerformanceScenario thisScenario : performanceScenariosToRun) {
             performanceScenarioNames.add(getClassNameOf(thisScenario));
@@ -60,13 +62,17 @@ public with sharing class PerformanceSuite {
         return this;
     }
 
-    
+    public PerformanceSuite clearExistingResults() {
+        delete [SELECT Id FROM PerformanceMeasureResult__c WHERE SuiteName__c = :suiteName];
+        return this;
+    }    
 
     public void run() {
         PerformanceExperiment baseExperiment;
 
         do {
             PerformanceExperiment thisExperiment = new PerformanceExperiment()
+                    .setSuiteName(suiteName)
                     .setStartSize(startSize)
                     .setStepSize(stepSize)
                     .setEndSize(endSize)

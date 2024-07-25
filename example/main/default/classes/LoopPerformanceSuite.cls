@@ -6,7 +6,7 @@
 public with sharing class LoopPerformanceSuite {
 
     public static void run() {
-        new PerformanceSuite(new List<PerformanceScenario>{
+        new PerformanceSuite('LoopPerformance', new List<PerformanceScenario>{
                 new IntegerLoopPerformanceScenario(),
                 new IteratorLoopPerformanceScenario(),
                 new IntegerStoredSizeLoopPerformanceScenario()

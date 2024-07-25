@@ -14,6 +14,7 @@ public with sharing class PerformanceExperiment implements Queueable {
     private Integer thisRepetition;
     private PerformanceExperiment thenRun;
 
+    public String suiteName {get; private set;}
     public String experimentName {get; private set;}
     public Integer thisStep {get; private set;}
     
@@ -35,6 +36,11 @@ public with sharing class PerformanceExperiment implements Queueable {
     public PerformanceExperiment setRepetitions(Integer repetitions) {
         this.repetitions = repetitions;
         thisRepetition = 0;
+        return this;
+    }
+
+    public PerformanceExperiment setSuiteName(String suiteName) {
+        this.suiteName = suiteName;
         return this;
     }
 
@@ -63,6 +69,7 @@ public with sharing class PerformanceExperiment implements Queueable {
         experiment.teardown();
         
         insert new PerformanceMeasureResult__c(
+                SuiteName__c = suiteName,
                 ExperimentName__c = experimentName,
                 Size__c = thisStep,
                 CpuTimeInMs__c = cpuTime,
