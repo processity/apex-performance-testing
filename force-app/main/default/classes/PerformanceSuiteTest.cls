@@ -9,7 +9,7 @@ private class PerformanceSuiteTest {
     @IsTest
     static void testBehavior() {
         Test.startTest();
-        new PerformanceSuite(new List<PerformanceScenario>{
+        new PerformanceSuite('PerformanceSuiteTest', new List<PerformanceScenario>{
                 new PerformanceExperimentTest.TestPerformanceScenario()
         })
                 .setStartSize(0)

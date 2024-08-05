@@ -14,6 +14,7 @@ public class PerformanceExperimentTest {
     static void normalBehaviour() {
         TestPerformanceScenario testPerformanceScenario = new TestPerformanceScenario();
         PerformanceExperiment experiment = new PerformanceExperiment()
+                .setSuiteName('PerformanceExperimentTest')
                 .setExperiment(testPerformanceScenario)
                 .setExperimentName(TestPerformanceScenario.class.getName())
                 .setStartSize(0)
@@ -32,6 +33,7 @@ public class PerformanceExperimentTest {
     static void chaining() {
         TestPerformanceScenario testPerformanceScenario = new TestPerformanceScenario();
         PerformanceExperiment experiment = new PerformanceExperiment()
+                .setSuiteName('PerformanceExperimentTest')
                 .setExperiment(testPerformanceScenario)
                 .setExperimentName(TestPerformanceScenario.class.getName())
                 .setStartSize(0)
@@ -39,6 +41,7 @@ public class PerformanceExperimentTest {
                 .setEndSize(2)
                 .setRepetitions(2)
                 .thenRun(new PerformanceExperiment()
+                        .setSuiteName('PerformanceExperimentTest')
                         .setExperiment(testPerformanceScenario)
                         .setExperimentName(TestPerformanceScenario.class.getName())
                         .setStartSize(3)
@@ -98,6 +101,7 @@ public class PerformanceExperimentTest {
     static Boolean failureIn(FailureMode modeToFailIn, String expectedMessage) {
         FailingPerformanceScenario failingPerformanceScenario = new FailingPerformanceScenario(modeToFailIn);
         PerformanceExperiment experiment = new PerformanceExperiment()
+                .setSuiteName('PerformanceExperimentTest')
                 .setExperiment(failingPerformanceScenario)
                 .setExperimentName(FailingPerformanceScenario.class.getName())
                 .setStartSize(0)

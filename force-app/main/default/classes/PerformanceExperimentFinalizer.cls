@@ -18,6 +18,7 @@ public with sharing class PerformanceExperimentFinalizer implements Finalizer {
             Exception errorException = context.getException();
             insert as user new PerformanceMeasureResult__c(
                     ExperimentName__c = performanceExperiment.experimentName,
+                    SuiteName__c = performanceExperiment.suiteName,
                     Size__c = performanceExperiment.thisStep,
                     Result__c = ParentJobResult.UNHANDLED_EXCEPTION.name(),
                     ErrorDetail__c = errorException.getTypeName() + ': ' + errorException.getMessage() + '\n' + errorException.getStackTraceString()

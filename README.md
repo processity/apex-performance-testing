@@ -1,7 +1,7 @@
 # Apex Performance Testing
 
-This package helps you to test the performance in a straightforward way, factoring in the variation that we might 
-expect to see from one run to another in Apex.
+This package helps you to test the performance of Apex code in a straightforward way. It factors in the variation that 
+we might expect to see from one run to another in Apex.
 
 You can set up a test with your own methods to `setup`, `run`, and `teardown` test data. The package will measure CPU time
 for the `run` part. Each run is performed inside a Queueable job. The framework then chains together the required runs 
