@@ -15,7 +15,7 @@ public abstract class LoopPerformanceScenario implements PerformanceScenario {
         }
     }
 
-    //PMD false positive, not teardown required
+    //PMD false positive, no teardown required
     @SuppressWarnings('PMD.EmptyStatementBlock')
     public void teardown() {
     }

@@ -15,6 +15,7 @@ public with sharing class LoopPerformanceSuite {
                 .setStepSize(1000)
                 .setEndSize(10000)
                 .setRepetitions(20)
+                .clearExistingResults()
                 .run();
     }
 }
