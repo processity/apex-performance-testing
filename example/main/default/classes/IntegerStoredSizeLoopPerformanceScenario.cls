@@ -7,7 +7,7 @@ public class IntegerStoredSizeLoopPerformanceScenario extends LoopPerformanceSce
     public void run() {
         Integer sum = 0;
         for(Integer i=0, size=data.size(); i < size; i++) {
-            sum += i;
+            sum += data[i];
         }
     }
 }

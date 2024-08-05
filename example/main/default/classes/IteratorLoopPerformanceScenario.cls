@@ -7,8 +7,8 @@ public class IteratorLoopPerformanceScenario extends LoopPerformanceScenario {
     
     public void run() {
         Integer sum = 0;
-        for(Integer i : data) {
-            sum += i;
+        for(Integer n : data) {
+            sum += n;
         }
     }
 }
