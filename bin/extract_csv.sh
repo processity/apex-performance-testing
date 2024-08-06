@@ -1,0 +1,3 @@
+#!/bin/zsh
+
+sf data query --query "SELECT ExperimentName__c FROM PerformanceMeasureResult__c WHERE SuiteName__c = '${1}' GROUP BY ExperimentName__c" --json | jq -r '.result.records[].ExperimentName__c' | xargs -I {} zsh -c "sf data query -q \"SELECT Size__c, CpuTimeInMs__c FROM PerformanceMeasureResult__c WHERE ExperimentName__c = '{}' AND Result__c = 'SUCCESS' ORDER BY Size__c\" -r csv > csv/{}.csv"
