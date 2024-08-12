@@ -16,7 +16,7 @@ public with sharing class PerformanceExperimentFinalizer implements Finalizer {
     public void execute(FinalizerContext context) {
         if(context.getResult() == ParentJobResult.UNHANDLED_EXCEPTION) {
             Exception errorException = context.getException();
-            insert as user new PerformanceMeasureResult__c(
+            insert as system new PerformanceMeasureResult__c(
                     ExperimentName__c = performanceExperiment.experimentName,
                     SuiteName__c = performanceExperiment.suiteName,
                     Size__c = performanceExperiment.thisStep,

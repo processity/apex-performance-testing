@@ -68,7 +68,7 @@ public with sharing class PerformanceExperiment implements Queueable {
         Integer cpuTime = measure.getResult();
         experiment.teardown();
         
-        insert new PerformanceMeasureResult__c(
+        insert as system new PerformanceMeasureResult__c(
                 SuiteName__c = suiteName,
                 ExperimentName__c = experimentName,
                 Size__c = thisStep,
