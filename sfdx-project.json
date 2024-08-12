@@ -1,8 +1,12 @@
 {
   "packageDirectories": [
     {
+      "versionName": "ver 0.1",
+      "versionNumber": "0.1.0.NEXT",
       "path": "force-app",
-      "default": true
+      "default": true,
+      "package": "Apex Performance Testing",
+      "versionDescription": "Test the performance of Apex code, recording the results into custom object records"
     },
     {
       "path": "example",
@@ -12,5 +16,9 @@
   "name": "apex-performance-testing",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "61.0"
+  "sourceApiVersion": "61.0",
+  "packageAliases": {
+    "Apex Performance Testing": "0HoWS00000008Tp0AI",
+    "Apex Performance Testing@0.1.0-1": "04tWS000000Ht9lYAC"
+  }
 }
