@@ -55,7 +55,7 @@ public class PerformanceExperimentTest {
 
         Assert.isTrue(assertTestPerformanceScenario(0, 1, 4, 2));
     }
-    
+
     public static Boolean assertTestPerformanceScenario(Integer startSize, Integer stepSize, Integer endSize, Integer repetitions) {
         List<PerformanceMeasureResult__c> results = [
                 SELECT ExperimentName__c, CpuTimeInMs__c, Size__c, Result__c
@@ -70,7 +70,7 @@ public class PerformanceExperimentTest {
         }
 
         Integer totalExecutions = ((endSize - startSize + 1)/stepSize)*repetitions;
-        
+
         Assert.areEqual(totalExecutions, PerformanceExperimentTest.runs);
         Assert.areEqual(totalExecutions, PerformanceExperimentTest.teardowns);
         for (Integer i = 0; i <= endSize; i += stepSize) {
@@ -119,7 +119,10 @@ public class PerformanceExperimentTest {
 
         // A second AsyncJob shows that the finalizer has re-queued the experiment. Apex tests won't run it, so we 
         // can't look for the actual result
-        Assert.areEqual(2, [SELECT Id FROM AsyncApexJob WHERE ApexClass.Name  = :PerformanceExperiment.class.getName()].size());
+        String apexClassName =  PerformanceExperiment.class.getName();
+        Integer pos = apexClassName.indexOf('.');
+        apexClassName = pos < 0 ? apexClassName : apexClassName.substring(pos+1);
+        Assert.areEqual(2, [SELECT Id FROM AsyncApexJob WHERE ApexClass.Name  = :apexClassName].size());
 
         List<PerformanceMeasureResult__c> results = [
                 SELECT ExperimentName__c, CpuTimeInMs__c, Size__c, Result__c, ErrorDetail__c

@@ -11,6 +11,14 @@
     {
       "path": "example",
       "default": false
+    },
+    {
+      "versionName": "ver 0.1",
+      "versionNumber": "0.1.0.NEXT",
+      "path": "force-app-namespaced",
+      "default": false,
+      "package": "Apex Performance Testing Namespaced",
+      "versionDescription": "Test the performance of Apex code, recording the results into custom object records"
     }
   ],
   "name": "apex-performance-testing",
@@ -19,6 +27,8 @@
   "sourceApiVersion": "61.0",
   "packageAliases": {
     "Apex Performance Testing": "0HoWS00000008Tp0AI",
-    "Apex Performance Testing@0.1.0-1": "04tWS000000Ht9lYAC"
+    "Apex Performance Testing Namespaced": "0HoWS00000008VR0AY",
+    "Apex Performance Testing@0.1.0-1": "04tWS000000Ht9lYAC",
+    "Apex Performance Testing Namespaced@0.1.0-1": "04tWS000000HuQnYAK"
   }
 }
