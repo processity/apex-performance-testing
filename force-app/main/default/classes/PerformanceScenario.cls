@@ -5,6 +5,7 @@
  * then teardown() in called
  */
 
+@NamespaceAccessible
 public interface PerformanceScenario {
     void setup(Integer size);
     void run();

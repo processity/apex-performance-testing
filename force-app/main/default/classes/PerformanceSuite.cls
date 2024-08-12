@@ -5,6 +5,7 @@
  * Then, the suite will run all the experiments in chained Queueables
  */
 
+@NamespaceAccessible
 public with sharing class PerformanceSuite {
 
     private Iterator<PerformanceScenario> performanceScenariosToRun;
@@ -15,6 +16,7 @@ public with sharing class PerformanceSuite {
     private Integer endSize;
     private Integer repetitions;
 
+    @NamespaceAccessible
     public PerformanceSuite(String suiteName, List<PerformanceScenario> performanceScenariosToRun) {
         this.performanceScenariosToRun = performanceScenariosToRun.iterator();
         this.suiteName = suiteName;
@@ -42,31 +44,37 @@ public with sharing class PerformanceSuite {
         return result;
     }
 
+    @NamespaceAccessible
     public PerformanceSuite setStartSize(Integer startSize) {
         this.startSize = startSize;
         return this;
     }
 
+    @NamespaceAccessible
     public PerformanceSuite setStepSize(Integer stepSize) {
         this.stepSize = stepSize;
         return this;
     }
 
+    @NamespaceAccessible
     public PerformanceSuite setEndSize(Integer endSize) {
         this.endSize = endSize;
         return this;
     }
 
+    @NamespaceAccessible
     public PerformanceSuite setRepetitions(Integer repetitions) {
         this.repetitions = repetitions;
         return this;
     }
 
+    @NamespaceAccessible
     public PerformanceSuite clearExistingResults() {
         delete [SELECT Id FROM PerformanceMeasureResult__c WHERE SuiteName__c = :suiteName];
         return this;
-    }    
+    }
 
+    @NamespaceAccessible
     public void run() {
         PerformanceExperiment baseExperiment;
 

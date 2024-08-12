@@ -5,6 +5,7 @@
  * PerformanceExperiment, then this other one is started after this one completes
  */
 
+@NamespaceAccessible
 public with sharing class PerformanceExperiment implements Queueable {
     private Integer stepSize;
     private Integer endSize;
@@ -17,43 +18,51 @@ public with sharing class PerformanceExperiment implements Queueable {
     public String suiteName {get; private set;}
     public String experimentName {get; private set;}
     public Integer thisStep {get; private set;}
-    
+
+    @NamespaceAccessible
     public PerformanceExperiment setStartSize(Integer startSize) {
         thisStep = startSize;
         return this;
     }
-
+    
+    @NamespaceAccessible
     public PerformanceExperiment setStepSize(Integer stepSize) {
         this.stepSize = stepSize;
         return this;
     }
 
+    @NamespaceAccessible
     public PerformanceExperiment setEndSize(Integer endSize) {
         this.endSize = endSize;
         return this;
     }
 
+    @NamespaceAccessible
     public PerformanceExperiment setRepetitions(Integer repetitions) {
         this.repetitions = repetitions;
         thisRepetition = 0;
         return this;
     }
 
+    @NamespaceAccessible
     public PerformanceExperiment setSuiteName(String suiteName) {
         this.suiteName = suiteName;
         return this;
     }
 
+    @NamespaceAccessible
     public PerformanceExperiment setExperimentName(String experimentName) {
         this.experimentName = experimentName;
         return this;
     }
 
+    @NamespaceAccessible
     public PerformanceExperiment setExperiment(PerformanceScenario experiment) {
         this.experiment = experiment;
         return this;
     }
     
+    @NamespaceAccessible
     public PerformanceExperiment thenRun(PerformanceExperiment thenRun) {
         this.thenRun = thenRun;
         return this;
