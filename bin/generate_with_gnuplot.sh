@@ -1,5 +1,10 @@
 #!/bin/zsh
 
+if (( # == 0 )); then
+   print >&2 "Usage: $0 TestSuiteName"
+   exit 1
+fi
+
 suiteName=${1};
 
 mkdir -p csv;
@@ -14,7 +19,9 @@ while IFS='' read -r line; do experiments+=("$line"); done < <(sf data query --q
 for ((i = 1; i <= $#experiments; i++)); do
   thisExperiment=${experiments[i]};
   experiments[i]=${experiments[i]:gs/\./_/};
+  echo "Fetching $thisExperiment"
   sf data query -q "SELECT Size__c, CpuTimeInMs__c FROM PerformanceMeasureResult__c WHERE ExperimentName__c = '$thisExperiment' AND Result__c = 'SUCCESS' ORDER BY Size__c" -r csv > "csv/${experiments[i]}.csv"
+  echo "Wrote to csv/${experiments[i]}.csv"
 done
 
 gnuplot_commands=$(mktemp)
@@ -61,5 +68,6 @@ for ((i = 1; i <= $#experiments; i++)); do
   fi
 done
 
+echo "Plotting with gnuplot to graphs/$suiteName.png"
 gnuplot "$gnuplot_commands"
 rm "$gnuplot_commands"

@@ -172,32 +172,19 @@ but you may prefer to use something more modern and base your analysis on some o
 
 This technique requires `sf` (the Salesforce CLI), `jq`, `xargs`, and `gnuplot`.
 
-### Setup
+### Operation
 
-Create empty directories for the CSV files and the graphs:
-
-```zsh
-mkdir csv
-mkdir graphs
-```
-
-### Extract CSV files
+Run the following script:
 
 ```zsh
- ./bin/extract_csv.sh <MyPerformanceSuiteName>
+ ./bin/generate_with_gnuplot.sh <MyPerformanceSuiteName>
  ```
 
-This gets all the experiment names for the given suite, processes the result with `jq`, then feeds them into `xargs` so 
-that they can be queried individually and put into CSV files with the experiment name. See 
-[extract_csv.sh](bin/extract_csv.sh) for details.
+This script performs the following steps:
 
-### Plot the data
-
-Then use `gnuplot` to plot the data. There is a script included [here in the repository](gnuplot/loopPerformance.gnuplot).
-You can modify this script to suit your own data
-
-```zsh
-gnuplot -d gnuplot/fieldChanges.gnuplot
-```
+1. Queries all experiment names from the performance suite data in Salesforce
+2. For each experiment, queries the data and writes the data to CSV files
+3. Constructs a gnuplot script to plot all the experiments onto the same graph
+4. Runs gnuplot to generate a PNG file with the graph data
 
 After plotting, you will see the results in the `graphs/` directory.
