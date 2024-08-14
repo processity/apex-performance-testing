@@ -70,12 +70,8 @@ public with sharing class PerformanceExperiment implements Queueable {
 
     public void execute(QueueableContext context) {
         System.attachFinalizer(new PerformanceExperimentFinalizer(this));
-        
-        experiment.setup(thisStep);
-        LimitsMeasure measure = new LimitsMeasure();
-        experiment.run();
-        Integer cpuTime = measure.getResult();
-        experiment.teardown();
+
+        Integer cpuTime = new PerformanceScenarioRunner(experiment).runAndReturnCpuTime(thisStep);
         
         insert as system new PerformanceMeasureResult__c(
                 SuiteName__c = suiteName,
