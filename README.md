@@ -170,7 +170,7 @@ but you may prefer to use something more modern and base your analysis on some o
 
 ### Requirements
 
-This technique requires `sf` (the Salesforce CLI), `jq`, `xargs`, and `gnuplot`.
+This technique requires `sf` (the Salesforce CLI), `jq`, and `gnuplot`.
 
 ### Operation
 
@@ -187,4 +187,5 @@ This script performs the following steps:
 3. Constructs a gnuplot script to plot all the experiments onto the same graph
 4. Runs gnuplot to generate a PNG file with the graph data
 
-After plotting, you will see the results in the `graphs/` directory.
+After plotting, you will see the results in the `graphs/` directory. The gnuplot commands will be in `gnuplot/MyPerformanceSuiteName.gnuplot` so 
+that you can modify the appearance if you want to (note, this file will get clobbered on the next run so be careful)

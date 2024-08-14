@@ -24,27 +24,27 @@ for ((i = 1; i <= $#experiments; i++)); do
   echo "Wrote to csv/${experiments[i]}.csv"
 done
 
-gnuplot_commands=$(mktemp)
+gnuplot_commands="gnuplot/$suiteName.gnuplot"
 
 # General gnuplot config
 
 cat <<-EOF > "$gnuplot_commands"
-    set datafile separator ','
-    set xtics nomirror
-    set ytics nomirror
-    set fit quiet nolog
-    set key autotitle columnhead
-    
-    set border 3 # Just bottom and left
-    set size ratio 0.5
-    set terminal png size 1200,600
-    set style fill solid
-    set style circle radius 2
-    
-    set ylabel "CPU Time (ms)"
-    set xlabel "# records"
-    
-    set output 'graphs/$suiteName.png'
+set datafile separator ','
+set xtics nomirror
+set ytics nomirror
+set fit quiet nolog
+set key autotitle columnhead
+
+set border 3 # Just bottom and left
+set size ratio 0.5
+set terminal png size 1200,600
+set style fill solid
+set style circle radius 2
+
+set ylabel "CPU Time (ms)"
+set xlabel "# records"
+
+set output 'graphs/$suiteName.png'
 EOF
 
 # Fit a line to each experiment
@@ -56,7 +56,7 @@ for ((i = 1; i <= $#experiments; i++)); do
 done
 
 # Plot all the experiments and lines
-
+echo "" >> "$gnuplot_commands"
 echo "plot \\" >> "$gnuplot_commands"
 
 for ((i = 1; i <= $#experiments; i++)); do
@@ -70,4 +70,3 @@ done
 
 echo "Plotting with gnuplot to graphs/$suiteName.png"
 gnuplot "$gnuplot_commands"
-rm "$gnuplot_commands"
