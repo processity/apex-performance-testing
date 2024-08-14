@@ -3,7 +3,7 @@
 This package helps you to test the performance of Apex code. It factors in the variation that we might expect to see 
 from one run to another in Apex tests multiple times and making it easy to plot the results.
 
-You write a test with three parts: `setup`, `run`, and `teardown`. The package run `setup`, will measure CPU time
+You write a test with three parts: `setup`, `run`, and `teardown`. The package will run `setup`, will measure CPU time
 for the `run` part, then run `teardown`. Each run is performed inside a Queueable job. The framework then chains 
 together the required runs to measure performance multiple times and at multiple input sizes. 
 
@@ -12,6 +12,17 @@ each run.
 
 These results can then be plotted to compare different ways of solving the same problem. Or just to find out how a single
 solution scales. 
+
+## Installation
+
+Either:
+
+- Paste this onto the end of your My Domain URL: /packaging/installPackage.apexp?p0=04tWS000000Ht9lYAC
+- Include in your SFDX project as "Apex Performance Testing": "04tWS000000Ht9lYAC"
+
+Note that we also built it with our own namespace so that it can be installed into scratch orgs for our ISV packages 
+during development (SF does not allow non-namespaced Unlocked Packages to be installed into namespaced scratch orgs). 
+You don't need this namespaced version (if you're an ISV, clone the repo and build your own package with your namespace).
 
 ## Some free performance tuning advice
 
