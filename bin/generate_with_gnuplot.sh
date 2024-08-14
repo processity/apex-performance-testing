@@ -42,7 +42,7 @@ set style fill solid
 set style circle radius 2
 
 set ylabel "CPU Time (ms)"
-set xlabel "# records"
+set xlabel "Size"
 
 set output 'graphs/$suiteName.png'
 EOF
