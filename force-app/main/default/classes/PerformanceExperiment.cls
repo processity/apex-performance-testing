@@ -24,43 +24,6 @@ public with sharing class PerformanceExperiment implements Queueable {
     public Integer thisStep { get; private set; }
     public PerformanceTestingMode mode { get; private set; }
 
-    public static PerformanceExperiment deserialize(String jsonString) {
-        PerformanceExperiment result = new PerformanceExperiment();
-        Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonString);
-        String experimentType = (String) jsonMap.get('experimentType');
-
-        try {
-            Type concreteType = Type.forName(experimentType);
-            result.experiment = (PerformanceScenario) JSON.deserialize(
-                JSON.serialize(jsonMap.get('experiment')),
-                concreteType
-            );
-        } catch (Exception e) {
-            throw new IllegalArgumentException('Invalid interfaceType: ' + experimentType);
-        }
-
-        result.thisStep = (Integer) jsonMap.get('thisStep');
-        result.stepSize = (Integer) jsonMap.get('stepSize');
-        result.endSize = (Integer) jsonMap.get('endSize');
-        result.repetitions = (Integer) jsonMap.get('repetitions');
-        result.thisRepetition = (Integer) jsonMap.get('thisRepetition');
-        result.totalExecutions = (Integer) jsonMap.get('totalExecutions');
-        result.mode = PerformanceTestingMode.valueOf((String) jsonMap.get('mode'));
-
-        String serializedThenRun = (String) jsonMap.get('serializedThenRun');
-
-        result.thenRun = serializedThenRun != null ? PerformanceExperiment.deserialize(serializedThenRun) : null;
-        result.suiteName = (String) jsonMap.get('suiteName');
-        result.experimentName = (String) jsonMap.get('experimentName');
-        return result;
-    }
-
-    public override String toString() {
-        experimentType = getClassNameOf(experiment);
-        serializedThenRun = thenRun != null ? thenRun.toString() : null;
-        return JSON.serialize(this);
-    }
-
     @NamespaceAccessible
     public PerformanceExperiment setStartSize(Integer startSize) {
         thisStep = startSize;
@@ -129,6 +92,43 @@ public with sharing class PerformanceExperiment implements Queueable {
             run();
         }
     }
+    
+    public static PerformanceExperiment deserialize(String jsonString) {
+        PerformanceExperiment result = new PerformanceExperiment();
+        Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonString);
+        String experimentType = (String) jsonMap.get('experimentType');
+
+        try {
+            Type concreteType = Type.forName(experimentType);
+            result.experiment = (PerformanceScenario) JSON.deserialize(
+                JSON.serialize(jsonMap.get('experiment')),
+                concreteType
+            );
+        } catch (Exception e) {
+            throw new IllegalArgumentException('Invalid interfaceType: ' + experimentType);
+        }
+
+        result.thisStep = (Integer) jsonMap.get('thisStep');
+        result.stepSize = (Integer) jsonMap.get('stepSize');
+        result.endSize = (Integer) jsonMap.get('endSize');
+        result.repetitions = (Integer) jsonMap.get('repetitions');
+        result.thisRepetition = (Integer) jsonMap.get('thisRepetition');
+        result.totalExecutions = (Integer) jsonMap.get('totalExecutions');
+        result.mode = PerformanceTestingMode.valueOf((String) jsonMap.get('mode'));
+
+        String serializedThenRun = (String) jsonMap.get('serializedThenRun');
+
+        result.thenRun = serializedThenRun != null ? PerformanceExperiment.deserialize(serializedThenRun) : null;
+        result.suiteName = (String) jsonMap.get('suiteName');
+        result.experimentName = (String) jsonMap.get('experimentName');
+        return result;
+    }
+
+    public override String toString() {
+        experimentType = getClassNameOf(experiment);
+        serializedThenRun = thenRun != null ? thenRun.toString() : null;
+        return JSON.serialize(this);
+    }
 
     public void requeueIfNecessary() {
         AsyncOptions options = new AsyncOptions();
@@ -188,6 +188,14 @@ public with sharing class PerformanceExperiment implements Queueable {
         }
     }
 
+    public void incrementCounters() {
+        ++thisRepetition;
+        if (thisRepetition >= repetitions) {
+            thisRepetition = 0;
+            thisStep += stepSize;
+        }
+    }
+
     private void createCompletedRecord() {
         insert as system new PerformanceMeasureResult__c(
             SuiteName__c = suiteName,
@@ -239,14 +247,6 @@ public with sharing class PerformanceExperiment implements Queueable {
         }
 
         return null;
-    }
-
-    public void incrementCounters() {
-        ++thisRepetition;
-        if (thisRepetition >= repetitions) {
-            thisRepetition = 0;
-            thisStep += stepSize;
-        }
     }
 
     private Integer getRequiredStackDepth() {
