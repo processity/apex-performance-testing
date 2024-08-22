@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>IsFinal__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Fired when the Test Suite execution is completed</description>
+    <inlineHelpText>Fired when the Test Suite execution is completed</inlineHelpText>
+    <isFilteringDisabled>false</isFilteringDisabled>
+    <isNameField>false</isNameField>
+    <isSortingDisabled>false</isSortingDisabled>
+    <label>Is Final</label>
+    <type>Checkbox</type>
+</CustomField>

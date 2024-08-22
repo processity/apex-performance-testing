@@ -23,4 +23,8 @@ public class ListPopulateByAssignPerformanceScenario implements PerformanceScena
     @SuppressWarnings('PMD.EmptyStatementBlock')
     public void teardown() {
     }
+
+    public String getLabel() {
+        return 'ListPopulateByAssignPerformanceScenario';
+    }
 }

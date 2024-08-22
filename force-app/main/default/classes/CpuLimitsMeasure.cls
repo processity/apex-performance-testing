@@ -4,14 +4,12 @@
  * @description Measures CPU usage
  */
 
-public class LimitsMeasure {
-
+public class CpuLimitsMeasure implements LimitMeasure {
     private Integer startCpu;
-
-    public LimitsMeasure() {
+    public CpuLimitsMeasure() {
         this.startCpu = Limits.getCpuTime();
     }
-    
+
     public Integer getResult() {
         return Limits.getCpuTime() - startCpu;
     }

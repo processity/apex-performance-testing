@@ -1,7 +1,7 @@
 /**
  * @author aidan@processity.ai
  * @date 10/07/2024
- * @description Runs a PerformanceScenario with the given size and repetitions. If thenRun() is set with another 
+ * @description Runs a PerformanceScenario with the given size and repetitions. If thenRun() is set with another
  * PerformanceExperiment, then this other one is started after this one completes
  */
 
@@ -10,24 +10,79 @@ public with sharing class PerformanceExperiment implements Queueable {
     private Integer stepSize;
     private Integer endSize;
     private Integer repetitions;
-    private PerformanceScenario experiment;
-    
-    private Integer thisRepetition;
-    private PerformanceExperiment thenRun;
+    private Integer totalExecutions;
+    public PerformanceScenario experiment;
 
-    public String suiteName {get; private set;}
-    public String experimentName {get; private set;}
-    public Integer thisStep {get; private set;}
+    private String experimentType;
+    private String serializedThenRun;
+
+    private Integer thisRepetition;
+    public PerformanceExperiment thenRun;
+
+    public String suiteName { get; private set; }
+    public String experimentName { get; private set; }
+    public Integer thisStep { get; private set; }
+    public PerformanceTestingMode mode { get; private set; }
+
+    public static PerformanceExperiment deserialize(String jsonString) {
+        PerformanceExperiment result = new PerformanceExperiment();
+        Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonString);
+        String experimentType = (String) jsonMap.get('experimentType');
+
+        try {
+            Type concreteType = Type.forName(experimentType);
+            result.experiment = (PerformanceScenario) JSON.deserialize(
+                JSON.serialize(jsonMap.get('experiment')),
+                concreteType
+            );
+        } catch (Exception e) {
+            throw new IllegalArgumentException('Invalid interfaceType: ' + experimentType);
+        }
+
+        result.thisStep = (Integer) jsonMap.get('thisStep');
+        result.stepSize = (Integer) jsonMap.get('stepSize');
+        result.endSize = (Integer) jsonMap.get('endSize');
+        result.repetitions = (Integer) jsonMap.get('repetitions');
+        result.thisRepetition = (Integer) jsonMap.get('thisRepetition');
+        result.totalExecutions = (Integer) jsonMap.get('totalExecutions');
+        result.mode = PerformanceTestingMode.valueOf((String) jsonMap.get('mode'));
+
+        String serializedThenRun = (String) jsonMap.get('serializedThenRun');
+
+        result.thenRun = serializedThenRun != null ? PerformanceExperiment.deserialize(serializedThenRun) : null;
+        result.suiteName = (String) jsonMap.get('suiteName');
+        result.experimentName = (String) jsonMap.get('experimentName');
+        return result;
+    }
+
+    public override String toString() {
+        experimentType = getClassNameOf(experiment);
+        serializedThenRun = thenRun != null ? thenRun.toString() : null;
+        return JSON.serialize(this);
+    }
 
     @NamespaceAccessible
     public PerformanceExperiment setStartSize(Integer startSize) {
         thisStep = startSize;
+
         return this;
     }
-    
+
     @NamespaceAccessible
     public PerformanceExperiment setStepSize(Integer stepSize) {
         this.stepSize = stepSize;
+        return this;
+    }
+
+    @NamespaceAccessible
+    public PerformanceExperiment setMode(PerformanceTestingMode mode) {
+        this.mode = mode;
+        return this;
+    }
+
+    @NamespaceAccessible
+    public PerformanceExperiment setTotalExecutions(Integer totalExecutions) {
+        this.totalExecutions = totalExecutions;
         return this;
     }
 
@@ -61,7 +116,7 @@ public with sharing class PerformanceExperiment implements Queueable {
         this.experiment = experiment;
         return this;
     }
-    
+
     @NamespaceAccessible
     public PerformanceExperiment thenRun(PerformanceExperiment thenRun) {
         this.thenRun = thenRun;
@@ -70,25 +125,15 @@ public with sharing class PerformanceExperiment implements Queueable {
 
     public void execute(QueueableContext context) {
         System.attachFinalizer(new PerformanceExperimentFinalizer(this));
-
-        Integer cpuTime = new PerformanceScenarioRunner(experiment).runAndReturnCpuTime(thisStep);
-        
-        insert as system new PerformanceMeasureResult__c(
-                SuiteName__c = suiteName,
-                ExperimentName__c = experimentName,
-                Size__c = thisStep,
-                CpuTimeInMs__c = cpuTime,
-                Result__c = ParentJobResult.SUCCESS.name()
-        );
-        
-        incrementCounters();
-        requeueIfNecessary();
+        if (mode == PerformanceTestingMode.QUEUEABLE) {
+            run();
+        }
     }
 
     public void requeueIfNecessary() {
         AsyncOptions options = new AsyncOptions();
         options.minimumQueueableDelayInMinutes = 0;
-        if(!AsyncInfo.hasMaxStackDepth()) {
+        if (!AsyncInfo.hasMaxStackDepth()) {
             options.maximumQueueableStackDepth = getRequiredStackDepth();
         }
         if (thisStep <= endSize) {
@@ -96,8 +141,104 @@ public with sharing class PerformanceExperiment implements Queueable {
         } else {
             if (thenRun != null) {
                 System.enqueueJob(thenRun, options);
+            } else {
+                createCompletedRecord();
             }
         }
+    }
+
+    public void runQueable() {
+        AsyncOptions asyncOptions = new AsyncOptions();
+        asyncOptions.minimumQueueableDelayInMinutes = 0;
+        asyncOptions.maximumQueueableStackDepth = getRequiredStackDepth();
+        System.enqueueJob(this, asyncOptions);
+    }
+
+    public void run() {
+        Integer cpuTime = new PerformanceScenarioRunner(experiment, mode).runAndReturnCpuTime(thisStep);
+
+        insert as system new PerformanceMeasureResult__c(
+            SuiteName__c = suiteName,
+            ExperimentName__c = experiment.getLabel(),
+            Size__c = thisStep,
+            CpuTimeInMs__c = cpuTime,
+            Result__c = ParentJobResult.SUCCESS.name()
+        );
+        executeNext();
+    }
+
+    public void executeNext() {
+        incrementCounters();
+
+        if (mode == PerformanceTestingMode.PLATFORM_EVENTS) {
+            chainNextExecution();
+        } else {
+            requeueIfNecessary();
+        }
+    }
+
+    public void chainNextExecution() {
+        if (thisStep <= endSize) {
+            publishEvent(this.toString(), false);
+        } else if (thenRun != null) {
+            publishEvent(thenRun.toString(), false);
+        } else {
+            createCompletedRecord();
+            publishEvent(null, true);
+        }
+    }
+
+    private void createCompletedRecord() {
+        insert as system new PerformanceMeasureResult__c(
+            SuiteName__c = suiteName,
+            ExperimentName__c = experiment.getLabel(),
+            Result__c = 'COMPLETED',
+            Size__c = thisStep
+        );
+    }
+
+    private void publishEvent(String context, Boolean isFinal) {
+        new Flow.Interview.Performance_Measure_Orcestrator(new Map<String, Object>{ 'serializedExperiment' => context })
+            .start();
+
+        PerformanceExperimentEvent__e event = new PerformanceExperimentEvent__e(
+            IsFinal__c = isFinal,
+            SuiteName__c = suiteName,
+            ExperimentName__c = experiment.getLabel(),
+            NextStepSize__c = getNextStepSize(),
+            NextExperimentName__c = getNextExperimentName(),
+            totalExecutions__c = totalExecutions
+        );
+        
+        if(Test.isRunningTest()) {
+            PerformanceExperimentEvent.executeExperiment(new List<String> { context });
+        } else {
+            Database.SaveResult sr = EventBus.publish(event);
+            if (!sr.isSuccess()) {
+                Database.Error err = sr.getErrors()[0];
+                throw new IllegalArgumentException('Error Code: ' + err.getStatusCode() + ' - ' + err.getMessage());
+            }   
+        }
+    }
+
+    private String getNextExperimentName() {
+        if (thisStep + 1 <= endSize) {
+            return this.experiment.getLabel();
+        } else if (thenRun != null) {
+            return thenRun.experimentName;
+        }
+
+        return null;
+    }
+
+    private Integer getNextStepSize() {
+        if (thisStep + 1 <= endSize) {
+            return this.thisStep;
+        } else if (thenRun != null) {
+            return thenRun.thisStep;
+        }
+
+        return null;
     }
 
     public void incrementCounters() {
@@ -107,15 +248,20 @@ public with sharing class PerformanceExperiment implements Queueable {
             thisStep += stepSize;
         }
     }
-    
+
     private Integer getRequiredStackDepth() {
-        return repetitions * (endSize - thisStep + stepSize)/stepSize + (thenRun?.getRequiredStackDepth() ?? 1);
+        return repetitions * (endSize - thisStep + stepSize) / stepSize + (thenRun?.getRequiredStackDepth() ?? 1);
     }
 
-    public void run() {
-        AsyncOptions asyncOptions = new AsyncOptions();
-        asyncOptions.minimumQueueableDelayInMinutes = 0;
-        asyncOptions.maximumQueueableStackDepth = getRequiredStackDepth();
-        System.enqueueJob(this, asyncOptions);
+    @SuppressWarnings('PMD.UnusedLocalVariable') // The case has to be used in a statement but we don't need the value
+    private static String getClassNameOf(Object performanceScenario) {
+        String result = 'DateTime';
+        try {
+            Datetime typeCheck = (Datetime) performanceScenario;
+        } catch (System.TypeException expectedTypeException) {
+            String message = expectedTypeException.getMessage().substringAfter('Invalid conversion from runtime type ');
+            result = message.substringBefore(' to Datetime');
+        }
+        return result;
     }
 }

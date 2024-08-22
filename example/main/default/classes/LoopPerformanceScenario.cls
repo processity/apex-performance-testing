@@ -19,4 +19,8 @@ public abstract class LoopPerformanceScenario implements PerformanceScenario {
     @SuppressWarnings('PMD.EmptyStatementBlock')
     public void teardown() {
     }
+
+    public String getLabel() {
+        return 'LoopPerformanceScenario';
+    }
 }
