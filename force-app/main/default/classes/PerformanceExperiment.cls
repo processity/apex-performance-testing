@@ -10,13 +10,13 @@ public with sharing class PerformanceExperiment implements Queueable {
     private Integer stepSize;
     private Integer endSize;
     private Integer repetitions;
+    private Integer thisRepetition;
     private Integer totalExecutions;
-    public PerformanceScenario experiment;
-
+    
     private String experimentType;
     private String serializedThenRun;
-
-    private Integer thisRepetition;
+    
+    public PerformanceScenario experiment;
     public PerformanceExperiment thenRun;
 
     public String suiteName { get; private set; }
@@ -92,7 +92,7 @@ public with sharing class PerformanceExperiment implements Queueable {
             run();
         }
     }
-    
+
     public static PerformanceExperiment deserialize(String jsonString) {
         PerformanceExperiment result = new PerformanceExperiment();
         Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonString);
@@ -136,18 +136,17 @@ public with sharing class PerformanceExperiment implements Queueable {
         if (!AsyncInfo.hasMaxStackDepth()) {
             options.maximumQueueableStackDepth = getRequiredStackDepth();
         }
+
         if (thisStep <= endSize) {
             System.enqueueJob(this, options);
+        } else if (thenRun != null) {
+            System.enqueueJob(thenRun, options);
         } else {
-            if (thenRun != null) {
-                System.enqueueJob(thenRun, options);
-            } else {
-                createCompletedRecord();
-            }
+            createCompletedRecord();
         }
     }
 
-    public void runQueable() {
+    public void runQueueable() {
         AsyncOptions asyncOptions = new AsyncOptions();
         asyncOptions.minimumQueueableDelayInMinutes = 0;
         asyncOptions.maximumQueueableStackDepth = getRequiredStackDepth();

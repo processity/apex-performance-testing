@@ -110,7 +110,7 @@ public with sharing class PerformanceSuite {
             if (mode == PerformanceTestingMode.PLATFORM_EVENTS) {
                 baseExperiment.run();
             } else {
-                baseExperiment.runQueable();
+                baseExperiment.runQueueable();
             }
             insert as system new PerformanceMeasureResult__c(
                 SuiteName__c = suiteName,

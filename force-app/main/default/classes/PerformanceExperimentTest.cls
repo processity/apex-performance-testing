@@ -23,7 +23,7 @@ public class PerformanceExperimentTest {
             .setRepetitions(2);
 
         Test.startTest();
-        experiment.runQueable();
+        experiment.runQueueable();
         Test.stopTest();
 
         Assert.isTrue(assertTestPerformanceScenario(0, 1, 4, 2));
@@ -54,7 +54,7 @@ public class PerformanceExperimentTest {
             );
 
         Test.startTest();
-        experiment.runQueable();
+        experiment.runQueueable();
         Test.stopTest();
 
         Assert.isTrue(assertTestPerformanceScenario(0, 1, 4, 2));
@@ -122,7 +122,7 @@ public class PerformanceExperimentTest {
 
         try {
             Test.startTest();
-            experiment.runQueable();
+            experiment.runQueueable();
             Test.stopTest();
         } catch (IllegalArgumentException e) {
             // Do nothing, we just want the finalizers to run
