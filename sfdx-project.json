@@ -15,7 +15,7 @@
     {
       "versionName": "ver 0.1",
       "versionNumber": "0.1.0.NEXT",
-      "path": "force-app-namespaced",
+      "path": "force-app",
       "default": false,
       "package": "Apex Performance Testing Namespaced",
       "versionDescription": "Test the performance of Apex code, recording the results into custom object records"
