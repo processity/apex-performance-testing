@@ -40,12 +40,12 @@ With all that said, I hope this package does help you to make better informed de
 There are two ways to write a for loop in Apex:
 
 1. As an iterator
-2. Using an integer index 
+2. Using an integer index
 
 The first format is generally considered to be more readable. The second is more efficient. But how much more efficient?
-That's a good question to be answered by this framework. 
+That's a good question to be answered by this framework.
 
-To write a performance scenario to be tested, we implement the `PerformanceScenario` interface. 
+To write a performance scenario to be tested, we implement the `PerformanceScenario` interface.
 
 In this case, we will do so by defining the `setup` and `teardown` methods of a `PerformanceScenario`:
 
@@ -79,7 +79,6 @@ Given that superclass, each actual test is very small:
 Iterator loop:
 ```apex
 public class IteratorLoopPerformanceScenario extends LoopPerformanceScenario {
-    
     public void run() {
         Integer sum = 0;
         for(Integer n : data) {
@@ -163,29 +162,31 @@ So we can conclude that for performance-critical code, this is the best method t
 version does remove potential slips like having nested loops and mixing up the loop variables 
 (e.g. writing `i` when you meant `j`), so iterators may be preferred when performance is not critical.
 
-## Analysing the data 
+## Analysing the data
 
-This section describes how to analyse the data with `gnuplot`. This reliable old tool is easy to get for most systems, 
-but you may prefer to use something more modern and base your analysis on some of what is described below for `gnuplot`.
+This section describes how to analyse the data with [@processity/cli-performance-testing](https://github.com/processity/cli-performance-testing).
 
 ### Requirements
 
-This technique requires `sf` (the Salesforce CLI), `jq`, and `gnuplot`.
+1. You have the [Salesforce CLI](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_install_cli.htm) installed.
+2. The latest version of the [apex-performance-testing](https://github.com/processity/apex-performance-testing) unlocked package is installed in your target Salesforce org.
+3. You have the [@processity/cli-performance-testing](https://github.com/processity/cli-performance-testing) installed.
+4. The target Salesforce org is authenticated using the Salesforce CLI and is set as the default org for your project repository.
+5. An Apex Performance suite is created and deployed in your org.
+
 
 ### Operation
 
 Run the following script:
 
 ```zsh
- ./bin/generate_with_gnuplot.sh <MyPerformanceSuiteName>
+sf performance test run <MyPerformanceSuiteName>
  ```
 
 This script performs the following steps:
 
-1. Queries all experiment names from the performance suite data in Salesforce
-2. For each experiment, queries the data and writes the data to CSV files
-3. Constructs a gnuplot script to plot all the experiments onto the same graph
-4. Runs gnuplot to generate a PNG file with the graph data
+1. Start the performance suite execution
+2. Display a live progress bar
+3. Generate a PDF report with graphs once the execution is complete.
 
-After plotting, you will see the results in the `graphs/` directory. The gnuplot commands will be in `gnuplot/MyPerformanceSuiteName.gnuplot` so 
-that you can modify the appearance if you want to (note, this file will get clobbered on the next run so be careful)
+After plotting, you will see the results in the `PerformanceTestReport.pdf`
