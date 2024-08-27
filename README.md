@@ -162,6 +162,64 @@ So we can conclude that for performance-critical code, this is the best method t
 version does remove potential slips like having nested loops and mixing up the loop variables 
 (e.g. writing `i` when you meant `j`), so iterators may be preferred when performance is not critical.
 
+## Different modes of testing
+
+There are 3 ways you can do performance Testing with this library:
+1. **QUEUEABLE**: Runs each performance test scenario in queueable mode, and chain the next execution in finalizer
+2. **PLATFORM_EVENTS**: Runs each performance test scenario in synchronous mode, and chain the next execution by firing platform event
+3. **QUEUEABLE_FROM_FINALIZER**: Runs each performance test scenario in queueable mode(from finalizer class), and chain the next execution in finalizer
+
+### Examples
+To run your test suite in 1 of three mode send 3rd parameter to `PerformanceSuite` constructor
+
+for QUEUEABLE
+
+```apex
+    new PerformanceSuite('LoopPerformance', new List<PerformanceScenario>{
+                new IntegerLoopPerformanceScenario(),
+                new IteratorLoopPerformanceScenario(),
+                new IntegerStoredSizeLoopPerformanceScenario()
+        }, PerformanceTestingMode.QUEUEABLE)
+                .setStartSize(1000)
+                .setStepSize(1000)
+                .setEndSize(10000)
+                .setRepetitions(20)
+                .clearExistingResults()
+                .run();
+```
+
+for PLATFORM_EVENTS
+```apex
+    new PerformanceSuite('LoopPerformance', new List<PerformanceScenario>{
+                new IntegerLoopPerformanceScenario(),
+                new IteratorLoopPerformanceScenario(),
+                new IntegerStoredSizeLoopPerformanceScenario()
+        }, PerformanceTestingMode.PLATFORM_EVENTS)
+                .setStartSize(1000)
+                .setStepSize(1000)
+                .setEndSize(10000)
+                .setRepetitions(20)
+                .clearExistingResults()
+                .run();
+```
+
+for QUEUEABLE_FROM_FINALIZER
+```apex
+    new PerformanceSuite('LoopPerformance', new List<PerformanceScenario>{
+                new IntegerLoopPerformanceScenario(),
+                new IteratorLoopPerformanceScenario(),
+                new IntegerStoredSizeLoopPerformanceScenario()
+        }, PerformanceTestingMode.QUEUEABLE_FROM_FINALIZER)
+                .setStartSize(1000)
+                .setStepSize(1000)
+                .setEndSize(10000)
+                .setRepetitions(20)
+                .clearExistingResults()
+                .run();
+```
+
+Note: if 3rd parameter is not specified, default mode is QUEUEABLE_FROM_FINALIZER
+
 ## Analysing the data
 
 This section describes how to analyse the data with [@processity/cli-performance-testing](https://github.com/processity/cli-performance-testing).
