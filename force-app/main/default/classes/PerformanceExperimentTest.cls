@@ -67,15 +67,16 @@ public class PerformanceExperimentTest {
         Integer repetitions
     ) {
         List<PerformanceMeasureResult__c> results = [
-            SELECT ExperimentName__c, PerformanceMetrics__c, Size__c, Result__c
+            SELECT ExperimentName__c, Size__c, Result__c, CpuTimeInMs__c, RealTimeInMs__c, HeapSizeInKB__c
             FROM PerformanceMeasureResult__c
             WHERE Result__c = 'SUCCESS'
             ORDER BY Size__c ASC
         ];
 
         for (PerformanceMeasureResult__c thisResult : results) {
-            PerformanceMetrics metrics = (PerformanceMetrics) JSON.deserialize(thisResult.PerformanceMetrics__c, PerformanceMetrics.class);
-            Assert.isTrue(metrics.cpuTime >= 0);
+            Assert.isTrue(thisResult.CpuTimeInMs__c >= 0);
+            Assert.isTrue(thisResult.RealTimeInMs__c >= 0);
+            Assert.isTrue(thisResult.HeapSizeInKB__c >= 0);
             Assert.areEqual(TestPerformanceScenario.class.getName(), thisResult.ExperimentName__c);
             Assert.areEqual(ParentJobResult.SUCCESS.name(), thisResult.Result__c);
         }
@@ -137,14 +138,14 @@ public class PerformanceExperimentTest {
         Assert.areEqual(2, [SELECT Id FROM AsyncApexJob WHERE ApexClass.Name = :apexClassName].size());
 
         List<PerformanceMeasureResult__c> results = [
-            SELECT ExperimentName__c, PerformanceMetrics__c, Size__c, Result__c
+            SELECT ExperimentName__c, ErrorDetail__c, Size__c, Result__c
             FROM PerformanceMeasureResult__c
             ORDER BY Size__c ASC
         ];
 
         Assert.areEqual(FailingPerformanceScenario.class.getName(), results[0].ExperimentName__c);
         Assert.areEqual(ParentJobResult.UNHANDLED_EXCEPTION.name(), results[0].Result__c);
-        Assert.isTrue(results[0].PerformanceMetrics__c.contains(expectedMessage));
+        Assert.isTrue(results[0].ErrorDetail__c.contains(expectedMessage));
         return true;
     }
 
