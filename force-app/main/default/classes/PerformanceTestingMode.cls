@@ -1,3 +1,4 @@
+@NamespaceAccessible
 public enum PerformanceTestingMode {
     QUEUEABLE,
     PLATFORM_EVENTS,

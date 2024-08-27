@@ -5,27 +5,20 @@
 
 public inherited sharing class PerformanceScenarioRunner {
     private PerformanceScenario performanceScenario;
-    private PerformanceTestingMode mode;
 
-    public PerformanceScenarioRunner(PerformanceScenario performanceScenario, PerformanceTestingMode mode) {
+    public PerformanceScenarioRunner(PerformanceScenario performanceScenario) {
         this.performanceScenario = performanceScenario;
-        this.mode = mode;
     }
 
-    public Integer runAndReturnCpuTime(Integer size) {
+    public PerformanceMetrics runAndReturnMetrics(Integer size) {
         performanceScenario.setup(size);
 
-        LimitMeasure measure;
-        if (this.mode == PerformanceTestingMode.PLATFORM_EVENTS) {
-            measure = new CurrentTimeLimitMeasure();
-        } else {
-            measure = new CpuLimitsMeasure();
-        }
-
+        PerformanceMetrics measure = new PerformanceMetrics();
         performanceScenario.run();
-        Integer cpuTime = measure.getResult();
+        measure.setResult();
+
         performanceScenario.teardown();
 
-        return cpuTime;
+        return measure;
     }
 }

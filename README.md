@@ -50,11 +50,11 @@ To write a performance scenario to be tested, we implement the `PerformanceScena
 In this case, we will do so by defining the `setup` and `teardown` methods of a `PerformanceScenario`:
 
 ```apex
-public abstract class LoopPerformanceScenario implements PerformanceScenario {
+public abstract class LoopPerformanceScenario extends PerformanceScenario {
 
     protected List<Integer> data;
 
-    public void setup(Integer size) {
+    public override void setup(Integer size) {
         data = new List<Integer>(size);
 
         for (Integer i = 0; i < size; i++) {

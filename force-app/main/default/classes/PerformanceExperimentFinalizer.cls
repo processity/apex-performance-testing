@@ -1,35 +1,38 @@
 /**
  * @author aidan@processity.ai
  * @date 18/07/2024
- * @description If a PerformanceExperiment failed, then insert a record to mark the failure and continue from the next
+ * @description If a experiment failed, then insert a record to mark the failure and continue from the next
  * step.
+ * Run the current experiment if the running mode is Queueable Finalizer.
  */
 
 public with sharing class PerformanceExperimentFinalizer implements Finalizer {
-    private PerformanceExperiment performanceExperiment;
+    private PerformanceExperiment experiment;
 
-    public PerformanceExperimentFinalizer(PerformanceExperiment performanceExperiment) {
-        this.performanceExperiment = performanceExperiment;
+    public PerformanceExperimentFinalizer(PerformanceExperiment experiment) {
+        this.experiment = experiment;
     }
 
     public void execute(FinalizerContext context) {
         if (context.getResult() == ParentJobResult.UNHANDLED_EXCEPTION) {
-            Exception errorException = context.getException();
-            insert as system new PerformanceMeasureResult__c(
-                ExperimentName__c = performanceExperiment.experimentName,
-                SuiteName__c = performanceExperiment.suiteName,
-                Size__c = performanceExperiment.thisStep,
-                Result__c = ParentJobResult.UNHANDLED_EXCEPTION.name(),
-                ErrorDetail__c = errorException.getTypeName() +
-                    ': ' +
-                    errorException.getMessage() +
-                    '\n' +
-                    errorException.getStackTraceString()
-            );
-            performanceExperiment.incrementCounters();
-            performanceExperiment.requeueIfNecessary();
-        } else if (performanceExperiment?.mode == PerformanceTestingMode.QUEUEABLE_FROM_FINALIZER) {
-            performanceExperiment.run();
+            createErrorRecord(context.getException());
+            experiment.executeNext();
+        } else if (experiment?.mode == PerformanceTestingMode.QUEUEABLE_FROM_FINALIZER) {
+            try {
+                experiment.run();
+            } catch (Exception ex) {
+                createErrorRecord(ex);
+            }
         }
+    }
+
+    private void createErrorRecord(Exception ex) {
+        insert as system new PerformanceMeasureResult__c(
+            Size__c = experiment.thisStep,
+            SuiteName__c = experiment.suiteName,
+            Result__c = ParentJobResult.UNHANDLED_EXCEPTION.name(),
+            ExperimentName__c = experiment.getLabel(),
+            PerformanceMetrics__c = ex.getTypeName() + ': ' + ex.getMessage() + '\n' + ex.getStackTraceString()
+        );
     }
 }

@@ -5,132 +5,81 @@
  * PerformanceExperiment, then this other one is started after this one completes
  */
 
-@NamespaceAccessible
 public with sharing class PerformanceExperiment implements Queueable {
     private Integer stepSize;
     private Integer endSize;
     private Integer repetitions;
     private Integer thisRepetition;
     private Integer totalExecutions;
-    
+
     private String experimentType;
     private String serializedThenRun;
-    
-    public PerformanceScenario experiment;
-    public PerformanceExperiment thenRun;
+
+    private PerformanceScenario experiment;
+    private PerformanceExperiment thenRun;
 
     public String suiteName { get; private set; }
-    public String experimentName { get; private set; }
     public Integer thisStep { get; private set; }
     public PerformanceTestingMode mode { get; private set; }
 
-    @NamespaceAccessible
-    public PerformanceExperiment setStartSize(Integer startSize) {
-        thisStep = startSize;
-
-        return this;
+    public void execute() {
+        if (mode == PerformanceTestingMode.PLATFORM_EVENTS) {
+            run();
+        } else {
+            runQueueable();
+        }
     }
 
-    @NamespaceAccessible
-    public PerformanceExperiment setStepSize(Integer stepSize) {
-        this.stepSize = stepSize;
-        return this;
+    public void executeNext() {
+        incrementCounters();
+
+        if (mode == PerformanceTestingMode.PLATFORM_EVENTS) {
+            chainNextExecution();
+        } else {
+            requeueIfNecessary();
+        }
     }
 
-    @NamespaceAccessible
-    public PerformanceExperiment setMode(PerformanceTestingMode mode) {
-        this.mode = mode;
-        return this;
-    }
+    public void run() {
+        PerformanceMetrics metrics = new PerformanceScenarioRunner(experiment).runAndReturnMetrics(thisStep);
 
-    @NamespaceAccessible
-    public PerformanceExperiment setTotalExecutions(Integer totalExecutions) {
-        this.totalExecutions = totalExecutions;
-        return this;
-    }
-
-    @NamespaceAccessible
-    public PerformanceExperiment setEndSize(Integer endSize) {
-        this.endSize = endSize;
-        return this;
-    }
-
-    @NamespaceAccessible
-    public PerformanceExperiment setRepetitions(Integer repetitions) {
-        this.repetitions = repetitions;
-        thisRepetition = 0;
-        return this;
-    }
-
-    @NamespaceAccessible
-    public PerformanceExperiment setSuiteName(String suiteName) {
-        this.suiteName = suiteName;
-        return this;
-    }
-
-    @NamespaceAccessible
-    public PerformanceExperiment setExperimentName(String experimentName) {
-        this.experimentName = experimentName;
-        return this;
-    }
-
-    @NamespaceAccessible
-    public PerformanceExperiment setExperiment(PerformanceScenario experiment) {
-        this.experiment = experiment;
-        return this;
-    }
-
-    @NamespaceAccessible
-    public PerformanceExperiment thenRun(PerformanceExperiment thenRun) {
-        this.thenRun = thenRun;
-        return this;
+        insert as system new PerformanceMeasureResult__c(
+            Size__c = thisStep,
+            SuiteName__c = suiteName,
+            ExperimentName__c = getLabel(),
+            Result__c = ParentJobResult.SUCCESS.name(),
+            PerformanceMetrics__c = JSON.serialize(metrics, true)
+        );
+        executeNext();
     }
 
     public void execute(QueueableContext context) {
         System.attachFinalizer(new PerformanceExperimentFinalizer(this));
+
+        // Note: when mode is queueable finalizer, run will be called from finalizer
         if (mode == PerformanceTestingMode.QUEUEABLE) {
             run();
         }
     }
 
-    public static PerformanceExperiment deserialize(String jsonString) {
-        PerformanceExperiment result = new PerformanceExperiment();
-        Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonString);
-        String experimentType = (String) jsonMap.get('experimentType');
-
-        try {
-            Type concreteType = Type.forName(experimentType);
-            result.experiment = (PerformanceScenario) JSON.deserialize(
-                JSON.serialize(jsonMap.get('experiment')),
-                concreteType
-            );
-        } catch (Exception e) {
-            throw new IllegalArgumentException('Invalid interfaceType: ' + experimentType);
-        }
-
-        result.thisStep = (Integer) jsonMap.get('thisStep');
-        result.stepSize = (Integer) jsonMap.get('stepSize');
-        result.endSize = (Integer) jsonMap.get('endSize');
-        result.repetitions = (Integer) jsonMap.get('repetitions');
-        result.thisRepetition = (Integer) jsonMap.get('thisRepetition');
-        result.totalExecutions = (Integer) jsonMap.get('totalExecutions');
-        result.mode = PerformanceTestingMode.valueOf((String) jsonMap.get('mode'));
-
-        String serializedThenRun = (String) jsonMap.get('serializedThenRun');
-
-        result.thenRun = serializedThenRun != null ? PerformanceExperiment.deserialize(serializedThenRun) : null;
-        result.suiteName = (String) jsonMap.get('suiteName');
-        result.experimentName = (String) jsonMap.get('experimentName');
-        return result;
-    }
-
     public override String toString() {
-        experimentType = getClassNameOf(experiment);
+        experimentType = PerformanceScenario.getClassNameOf(experiment);
         serializedThenRun = thenRun != null ? thenRun.toString() : null;
         return JSON.serialize(this);
     }
 
-    public void requeueIfNecessary() {
+    public String getLabel() {
+        return experiment.getLabel();
+    }
+
+    private void runQueueable() {
+        AsyncOptions asyncOptions = new AsyncOptions();
+        asyncOptions.minimumQueueableDelayInMinutes = 0;
+        asyncOptions.maximumQueueableStackDepth = getRequiredStackDepth();
+        System.enqueueJob(this, asyncOptions);
+    }
+
+    private void requeueIfNecessary() {
         AsyncOptions options = new AsyncOptions();
         options.minimumQueueableDelayInMinutes = 0;
         if (!AsyncInfo.hasMaxStackDepth()) {
@@ -146,37 +95,7 @@ public with sharing class PerformanceExperiment implements Queueable {
         }
     }
 
-    public void runQueueable() {
-        AsyncOptions asyncOptions = new AsyncOptions();
-        asyncOptions.minimumQueueableDelayInMinutes = 0;
-        asyncOptions.maximumQueueableStackDepth = getRequiredStackDepth();
-        System.enqueueJob(this, asyncOptions);
-    }
-
-    public void run() {
-        Integer cpuTime = new PerformanceScenarioRunner(experiment, mode).runAndReturnCpuTime(thisStep);
-
-        insert as system new PerformanceMeasureResult__c(
-            SuiteName__c = suiteName,
-            ExperimentName__c = experiment.getLabel(),
-            Size__c = thisStep,
-            CpuTimeInMs__c = cpuTime,
-            Result__c = ParentJobResult.SUCCESS.name()
-        );
-        executeNext();
-    }
-
-    public void executeNext() {
-        incrementCounters();
-
-        if (mode == PerformanceTestingMode.PLATFORM_EVENTS) {
-            chainNextExecution();
-        } else {
-            requeueIfNecessary();
-        }
-    }
-
-    public void chainNextExecution() {
+    private void chainNextExecution() {
         if (thisStep <= endSize) {
             publishEvent(this.toString(), false);
         } else if (thenRun != null) {
@@ -187,7 +106,7 @@ public with sharing class PerformanceExperiment implements Queueable {
         }
     }
 
-    public void incrementCounters() {
+    private void incrementCounters() {
         ++thisRepetition;
         if (thisRepetition >= repetitions) {
             thisRepetition = 0;
@@ -197,26 +116,26 @@ public with sharing class PerformanceExperiment implements Queueable {
 
     private void createCompletedRecord() {
         insert as system new PerformanceMeasureResult__c(
-            SuiteName__c = suiteName,
-            ExperimentName__c = experiment.getLabel(),
+            Size__c = thisStep,
             Result__c = 'COMPLETED',
-            Size__c = thisStep
+            SuiteName__c = suiteName,
+            ExperimentName__c = getLabel()
         );
     }
 
     private void publishEvent(String context, Boolean isFinal) {
         new Flow.Interview.Performance_Measure_Orcestrator(new Map<String, Object>{ 'serializedExperiment' => context })
             .start();
-
+        PerformanceExperiment next = nextExecution();
         PerformanceExperimentEvent__e event = new PerformanceExperimentEvent__e(
             IsFinal__c = isFinal,
             SuiteName__c = suiteName,
-            ExperimentName__c = experiment.getLabel(),
-            NextStepSize__c = getNextStepSize(),
-            NextExperimentName__c = getNextExperimentName(),
+            ExperimentName__c = getLabel(),
+            NextStepSize__c = next?.thisStep,
+            NextExperimentName__c = next?.getLabel(),
             totalExecutions__c = totalExecutions
         );
-        
+
         if(Test.isRunningTest()) {
             PerformanceExperimentEvent.executeExperiment(new List<String> { context });
         } else {
@@ -224,25 +143,15 @@ public with sharing class PerformanceExperiment implements Queueable {
             if (!sr.isSuccess()) {
                 Database.Error err = sr.getErrors()[0];
                 throw new IllegalArgumentException('Error Code: ' + err.getStatusCode() + ' - ' + err.getMessage());
-            }   
+            }
         }
     }
 
-    private String getNextExperimentName() {
-        if (thisStep + 1 <= endSize) {
-            return this.experiment.getLabel();
+    private PerformanceExperiment nextExecution() {
+        if (thisStep <= endSize) {
+            return this;
         } else if (thenRun != null) {
-            return thenRun.experimentName;
-        }
-
-        return null;
-    }
-
-    private Integer getNextStepSize() {
-        if (thisStep + 1 <= endSize) {
-            return this.thisStep;
-        } else if (thenRun != null) {
-            return thenRun.thisStep;
+            return thenRun;
         }
 
         return null;
@@ -262,5 +171,96 @@ public with sharing class PerformanceExperiment implements Queueable {
             result = message.substringBefore(' to Datetime');
         }
         return result;
+    }
+
+    public inherited sharing class Builder {
+        private PerformanceExperiment instance;
+
+        public Builder() {
+            instance = new PerformanceExperiment();
+        }
+
+        public Builder(String jsonString) {
+            instance = new PerformanceExperiment();
+
+            Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonString);
+            String experimentType = (String) jsonMap.get('experimentType');
+            Type concreteType = Type.forName(experimentType);
+
+            instance.experiment = (PerformanceScenario) JSON.deserialize(
+                                                            JSON.serialize(jsonMap.get('experiment')),
+                                                            concreteType
+                                                        );
+
+            setEndSize((Integer) jsonMap.get('endSize'));
+            setStepSize((Integer) jsonMap.get('stepSize'));
+            setStartSize((Integer) jsonMap.get('thisStep'));
+            setSuiteName((String) jsonMap.get('suiteName'));
+            setRepetitions((Integer) jsonMap.get('repetitions'));
+            setThenRun((String) jsonMap.get('serializedThenRun'));
+            setThisRepetition((Integer) jsonMap.get('thisRepetition'));
+            setTotalExecutions((Integer) jsonMap.get('totalExecutions'));
+            setMode(PerformanceTestingMode.valueOf((String) jsonMap.get('mode')));
+        }
+
+        public PerformanceExperiment getInstance() {
+            return instance;
+        }
+
+        public Builder setThisRepetition(Integer thisRepetition) {
+            instance.thisRepetition = thisRepetition;
+            return this;
+        }
+
+        public Builder setStartSize(Integer startSize) {
+            instance.thisStep = startSize;
+            return this;
+        }
+
+        public Builder setStepSize(Integer stepSize) {
+            instance.stepSize = stepSize;
+            return this;
+        }
+
+        public Builder setMode(PerformanceTestingMode mode) {
+            instance.mode = mode;
+            return this;
+        }
+
+        public Builder setTotalExecutions(Integer totalExecutions) {
+            instance.totalExecutions = totalExecutions;
+            return this;
+        }
+
+        public Builder setEndSize(Integer endSize) {
+            instance.endSize = endSize;
+            return this;
+        }
+
+        public Builder setRepetitions(Integer repetitions) {
+            instance.repetitions = repetitions;
+            instance.thisRepetition = 0;
+            return this;
+        }
+
+        public Builder setSuiteName(String suiteName) {
+            instance.suiteName = suiteName;
+            return this;
+        }
+
+        public Builder setExperiment(PerformanceScenario experiment) {
+            instance.experiment = experiment;
+            return this;
+        }
+
+        public Builder setThenRun(PerformanceExperiment thenRun) {
+            instance.thenRun = thenRun;
+            return this;
+        }
+
+        public Builder setThenRun(String serializedThenRun) {
+            instance.thenRun = serializedThenRun != null ? new Builder(serializedThenRun).getInstance() : null;
+            return this;
+        }
     }
 }

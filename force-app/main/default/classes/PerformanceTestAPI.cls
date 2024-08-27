@@ -1,3 +1,9 @@
+/**
+ * @author amol@processity.ai
+ * @date 27/08/2024
+ * @description Rest API to execute Performance suite by its name
+ */
+
 @RestResource(urlMapping='/PerformanceTestAPI/*')
 global with sharing class PerformanceTestAPI {
     @HttpPost
@@ -17,7 +23,7 @@ global with sharing class PerformanceTestAPI {
             if (runnerType != null && PerformanceSuiteRunner.class.isAssignableFrom(runnerType)) {
                 PerformanceSuiteRunner runnerInstance = (PerformanceSuiteRunner) runnerType.newInstance();
 
-                PerformanceSuiteResponse suiteResponse = runnerInstance.run();
+                PerformanceSuite.Response suiteResponse = runnerInstance.run();
                 RestContext.response.statusCode = 200;
                 result = new Response(
                     suiteResponse.label,

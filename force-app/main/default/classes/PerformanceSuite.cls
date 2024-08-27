@@ -33,24 +33,10 @@ public with sharing class PerformanceSuite {
         this.suiteName = suiteName;
         List<String> performanceScenarioNames = new List<String>();
         for (PerformanceScenario thisScenario : performanceScenariosToRun) {
-            performanceScenarioNames.add(getClassNameOf(thisScenario));
+            performanceScenarioNames.add(PerformanceScenario.getClassNameOf(thisScenario));
         }
         this.performanceScenarioNames = performanceScenarioNames.iterator();
         this.mode = mode;
-    }
-
-    // This is crazy-ugly, but works even for inner classes
-    // https://salesforce.stackexchange.com/questions/3385/can-i-determine-the-class-name-of-an-object-instance-at-run-time/384185#384185
-    @SuppressWarnings('PMD.UnusedLocalVariable') // The case has to be used in a statement but we don't need the value
-    private static String getClassNameOf(Object performanceScenario) {
-        String result = 'DateTime';
-        try {
-            Datetime typeCheck = (Datetime) performanceScenario;
-        } catch (System.TypeException expectedTypeException) {
-            String message = expectedTypeException.getMessage().substringAfter('Invalid conversion from runtime type ');
-            result = message.substringBefore(' to Datetime');
-        }
-        return result;
     }
 
     @NamespaceAccessible
@@ -84,53 +70,81 @@ public with sharing class PerformanceSuite {
     }
 
     @NamespaceAccessible
-    public Integer run() {
+    public PerformanceSuite.Response run() {
         PerformanceExperiment baseExperiment;
         Integer totalExecutions = Integer.valueOf(
             Math.ceil((endSize - startSize) / stepSize + 1) * repetitions * numberOfExperiments
         );
 
         do {
-            PerformanceExperiment thisExperiment = new PerformanceExperiment()
+            PerformanceExperiment thisExperiment = new PerformanceExperiment.Builder()
                 .setSuiteName(suiteName)
                 .setStartSize(startSize)
                 .setStepSize(stepSize)
                 .setEndSize(endSize)
                 .setMode(mode)
                 .setRepetitions(repetitions)
-                .setExperimentName(performanceScenarioNames.next())
                 .setExperiment(performanceScenariosToRun.next())
-                .setTotalExecutions(totalExecutions);
+                .setTotalExecutions(totalExecutions)
+                .setThenRun(baseExperiment)
+                .getInstance();
 
-            thisExperiment.thenRun(baseExperiment);
             baseExperiment = thisExperiment;
         } while (performanceScenariosToRun.hasNext());
 
         try {
-            if (mode == PerformanceTestingMode.PLATFORM_EVENTS) {
-                baseExperiment.run();
-            } else {
-                baseExperiment.runQueueable();
-            }
+            baseExperiment.execute();
+
             insert as system new PerformanceMeasureResult__c(
                 SuiteName__c = suiteName,
-                ExperimentName__c = baseExperiment.experiment.getLabel(),
+                ExperimentName__c = baseExperiment.getLabel(),
                 Size__c = 0,
                 Result__c = 'STARTED',
-                ErrorDetail__c = JSON.serialize(
-                    new Map<String, Object>{ 'totalExecutions' => totalExecutions, 'mode' => mode.name() }
+                PerformanceMetrics__c = JSON.serialize(
+                    new Map<String, Object>{
+                        'totalExecutions' => totalExecutions,
+                        'mode' => mode.name()
+                    }
                 )
             );
         } catch (Exception ex) {
             insert as system new PerformanceMeasureResult__c(
-                SuiteName__c = suiteName,
-                ExperimentName__c = baseExperiment.experiment.getLabel(),
-                Size__c = baseExperiment.thisStep,
                 Result__c = 'Error',
-                ErrorDetail__c = ex.getMessage()
+                SuiteName__c = suiteName,
+                Size__c = baseExperiment.thisStep,
+                PerformanceMetrics__c = ex.getMessage(),
+                ExperimentName__c = baseExperiment.getLabel()
             );
         }
 
-        return totalExecutions;
+        return new PerformanceSuite.Response(suiteName, totalExecutions, mode);
+    }
+
+    @NamespaceAccessible
+    public inherited sharing class Response {
+        @NamespaceAccessible
+        public String label;
+        @NamespaceAccessible
+        public PerformanceTestingMode mode;
+        @NamespaceAccessible
+        public Integer totalExecutions;
+
+        public Response(String label, Integer totalExecutions, PerformanceTestingMode mode) {
+            this.label = label;
+            this.mode = mode;
+            this.totalExecutions = totalExecutions;
+        }
+
+        public Response(String label, Integer totalExecutions) {
+            this.label = label;
+            this.mode = PerformanceTestingMode.QUEUEABLE_FROM_FINALIZER;
+            this.totalExecutions = totalExecutions;
+        }
+
+        public Response(String label) {
+            this.label = label;
+            this.totalExecutions = 0;
+            this.mode = PerformanceTestingMode.QUEUEABLE_FROM_FINALIZER;
+        }
     }
 }

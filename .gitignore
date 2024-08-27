@@ -3,3 +3,5 @@
 .sf
 .vscode
 .DS_Store
+.ptest
+PerformanceTestReport.pdf

@@ -65,13 +65,13 @@ private class PerformanceTestAPITest {
     // HELPER
 
     public class TestPerformanceSuiteRunner implements PerformanceSuiteRunner {
-        public PerformanceSuiteResponse run() {
-            return new PerformanceSuiteResponse('TestPerformanceSuiteRunner');
+        public PerformanceSuite.Response run() {
+            return new PerformanceSuite.Response('TestPerformanceSuiteRunner');
         }
     }
 
     public class BadPerformanceSuiteRunner implements PerformanceSuiteRunner {
-        public PerformanceSuiteResponse run() {
+        public PerformanceSuite.Response run() {
             throw new IllegalArgumentException('Error Message');
         }
     }
