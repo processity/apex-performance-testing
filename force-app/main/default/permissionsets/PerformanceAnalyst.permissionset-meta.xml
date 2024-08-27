@@ -10,6 +10,26 @@
         <field>PerformanceMeasureResult__c.PerformanceMetrics__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>PerformanceMeasureResult__c.ErrorDetail__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>PerformanceMeasureResult__c.CpuTimeInMs__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>PerformanceMeasureResult__c.HeapSizeInKB__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>PerformanceMeasureResult__c.RealTimeInMs__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>PerformanceAnalyst</label>
     <objectPermissions>

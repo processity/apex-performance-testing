@@ -112,8 +112,8 @@ public with sharing class PerformanceSuite {
                 Result__c = 'Error',
                 SuiteName__c = suiteName,
                 Size__c = baseExperiment.thisStep,
-                PerformanceMetrics__c = ex.getMessage(),
-                ExperimentName__c = baseExperiment.getLabel()
+                ExperimentName__c = baseExperiment.getLabel(),
+                ErrorDetail__c = ex.getTypeName() + ': ' + ex.getMessage() + '\n' + ex.getStackTraceString()
             );
         }
 

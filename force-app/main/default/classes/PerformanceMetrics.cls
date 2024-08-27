@@ -28,13 +28,5 @@ public with sharing class PerformanceMetrics {
         cpuTime = Limits.getCpuTime() - startCpuTime;
         realTime = System.currentTimeMillis() - startRealTime;
         heapSize = Limits.getHeapSize() - startHeapSize;
-
-        reset();
-    }
-
-    private void reset() {
-        startCpuTime = null;
-        startRealTime = null;
-        startHeapSize = null;
     }
 }

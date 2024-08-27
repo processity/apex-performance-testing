@@ -48,7 +48,9 @@ public with sharing class PerformanceExperiment implements Queueable {
             SuiteName__c = suiteName,
             ExperimentName__c = getLabel(),
             Result__c = ParentJobResult.SUCCESS.name(),
-            PerformanceMetrics__c = JSON.serialize(metrics, true)
+            HeapSizeInKB__c = metrics.heapSize,
+            RealTimeInMs__c = metrics.realTime,
+            CpuTimeInMs__c = metrics.cpuTime
         );
         executeNext();
     }

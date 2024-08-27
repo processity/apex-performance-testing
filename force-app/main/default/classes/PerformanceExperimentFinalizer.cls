@@ -32,7 +32,7 @@ public with sharing class PerformanceExperimentFinalizer implements Finalizer {
             SuiteName__c = experiment.suiteName,
             Result__c = ParentJobResult.UNHANDLED_EXCEPTION.name(),
             ExperimentName__c = experiment.getLabel(),
-            PerformanceMetrics__c = ex.getTypeName() + ': ' + ex.getMessage() + '\n' + ex.getStackTraceString()
+            ErrorDetail__c = ex.getTypeName() + ': ' + ex.getMessage() + '\n' + ex.getStackTraceString()
         );
     }
 }

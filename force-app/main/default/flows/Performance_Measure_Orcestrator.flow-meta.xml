@@ -92,7 +92,7 @@
             <targetReference>Resume_Next_Experiment</targetReference>
         </connector>
         <inputAssignments>
-            <field>PerformanceMetrics__c</field>
+            <field>ErrorDetail__c</field>
             <value>
                 <elementReference>$Flow.FaultMessage</elementReference>
             </value>
