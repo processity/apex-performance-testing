@@ -1,4 +1,4 @@
-public with sharing class ClassicEqualityCheck extends StringComparisionScenario {
+public with sharing class ClassicEqualityCheck extends StringComparisonScenario {
     public override void run() {
         Integer size = firstTexts.size();
 
