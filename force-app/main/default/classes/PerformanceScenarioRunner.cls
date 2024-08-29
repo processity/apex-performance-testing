@@ -4,7 +4,7 @@
  */
 
 public inherited sharing class PerformanceScenarioRunner {
-    private PerformanceScenario performanceScenario;
+    private final PerformanceScenario performanceScenario;
 
     public PerformanceScenarioRunner(PerformanceScenario performanceScenario) {
         this.performanceScenario = performanceScenario;

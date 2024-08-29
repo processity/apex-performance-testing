@@ -4,7 +4,7 @@
  * @description Rest API to execute Performance suite by its name
  */
 
-@RestResource(urlMapping='/PerformanceTestAPI/*')
+@RestResource(UrlMapping='/PerformanceTestAPI/*')
 global with sharing class PerformanceTestAPI {
     @HttpPost
     global static Response executePerformanceSuite(String suiteName) {

@@ -6,12 +6,12 @@
  */
 
 public with sharing class PerformanceExperimentEvent {
-    private String serializedExperiment;
+    private final String serializedExperiment;
 
     @InvocableMethod(
-        label='Execute Experiment'
-        description='Execute next Experiment from list of experiment.'
-        category='PerformanceTesting'
+        Label='Execute Experiment'
+        Description='Execute next Experiment from list of experiment.'
+        Category='PerformanceTesting'
     )
     public static void executeExperiment(List<String> serializedExperiments) {
         new PerformanceExperimentEvent(serializedExperiments).execute();

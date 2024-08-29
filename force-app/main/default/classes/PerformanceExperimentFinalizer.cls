@@ -7,7 +7,7 @@
  */
 
 public with sharing class PerformanceExperimentFinalizer implements Finalizer {
-    private PerformanceExperiment experiment;
+    private final PerformanceExperiment experiment;
 
     public PerformanceExperimentFinalizer(PerformanceExperiment experiment) {
         this.experiment = experiment;
