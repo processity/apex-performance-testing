@@ -1,4 +1,4 @@
-public with sharing class StringDotEqualsCheck extends StringComparisionScenario {
+public with sharing class StringDotEqualsCheck extends StringComparisonScenario {
     public override void run() {
         Integer size = firstTexts.size();
 

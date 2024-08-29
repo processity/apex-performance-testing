@@ -7,15 +7,16 @@
 
 @NamespaceAccessible
 public with sharing class PerformanceSuite {
-    private Iterator<PerformanceScenario> performanceScenariosToRun;
-    private Iterator<String> performanceScenarioNames;
-    private String suiteName;
+    private final String suiteName;
+    private final Integer numberOfExperiments;
+    private final PerformanceTestingMode mode;
+    private final Iterator<String> performanceScenarioNames;
+    private final Iterator<PerformanceScenario> performanceScenariosToRun;
+
     private Integer startSize;
     private Integer stepSize;
     private Integer endSize;
     private Integer repetitions;
-    private Integer numberOfExperiments;
-    private PerformanceTestingMode mode;
 
     @NamespaceAccessible
     public PerformanceSuite(String suiteName, List<PerformanceScenario> performanceScenariosToRun) {

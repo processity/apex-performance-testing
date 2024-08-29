@@ -10,9 +10,9 @@ public with sharing class PerformanceMetrics {
     public Double realTime;
     public Double heapSize;
 
-    private Integer startCpuTime;
-    private Double startRealTime;
-    private Integer startHeapSize;
+    private final Integer startCpuTime;
+    private final Double startRealTime;
+    private final Integer startHeapSize;
 
     public PerformanceMetrics(String errorMessage) {
         this.errorMessage = errorMessage;

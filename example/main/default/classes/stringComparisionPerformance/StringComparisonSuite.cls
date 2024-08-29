@@ -1,7 +1,7 @@
-public with sharing class StringComparisionSuite implements PerformanceSuiteRunner {
+public with sharing class StringComparisonSuite implements PerformanceSuiteRunner {
     public PerformanceSuite.Response run() {
         return new PerformanceSuite(
-                'String Comparision',
+                'String Comparison',
                 new List<PerformanceScenario>{
                     new ClassicEqualityCheck(),
                     new StringDotEqualsCheck(),

@@ -5,7 +5,7 @@
 
 @IsTest
 public class PerformanceExperimentTest {
-    static List<Integer> sizes = new List<Integer>();
+    static final List<Integer> sizes = new List<Integer>();
     static Integer runs = 0;
     static Integer teardowns = 0;
 
