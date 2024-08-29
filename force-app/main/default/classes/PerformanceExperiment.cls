@@ -176,7 +176,7 @@ public with sharing class PerformanceExperiment implements Queueable {
     }
 
     public inherited sharing class Builder {
-        private PerformanceExperiment instance;
+        private final PerformanceExperiment instance;
 
         public Builder() {
             instance = new PerformanceExperiment();

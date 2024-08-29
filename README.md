@@ -218,6 +218,16 @@ for QUEUEABLE_FROM_FINALIZER
                 .run();
 ```
 
+### Which mode should I use?
+
+When selecting a mode for performance testing, consider the nature of your test scenarios and the specific limitations of each mode:
+
+- **Use Queueable Mode** for simpler scenarios where additional queueable jobs are not required.
+- **Use QUEUEABLE_FROM_FINALIZER Mode** when you need to handle post-test actions but are not concerned with fatal errors stopping execution.
+- **Use PLATFORM_EVENTS Mode** for scenarios that benefit from asynchronous processing and do not require accurate CPU time tracking when DML operations are involved.
+
+By understanding these modes and their constraints, you can effectively utilize this framework to gain valuable insights into your Apex code's performance under various conditions.
+
 Note: if 3rd parameter is not specified, default mode is QUEUEABLE_FROM_FINALIZER
 
 ## Analysing the data
