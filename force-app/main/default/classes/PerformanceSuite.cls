@@ -1,13 +1,12 @@
 /**
  * @author aidan@processity.ai
  * @date 11/07/2024
- * @description A suite of performance experiments to run. Create with a list of scenarios and the size/iterations. 
+ * @description A suite of performance experiments to run. Create with a list of scenarios and the size/iterations.
  * Then, the suite will run all the experiments in chained Queueables
  */
 
 @NamespaceAccessible
 public with sharing class PerformanceSuite {
-
     private Iterator<PerformanceScenario> performanceScenariosToRun;
     private Iterator<String> performanceScenarioNames;
     private String suiteName;
@@ -15,33 +14,29 @@ public with sharing class PerformanceSuite {
     private Integer stepSize;
     private Integer endSize;
     private Integer repetitions;
+    private Integer numberOfExperiments;
+    private PerformanceTestingMode mode;
 
     @NamespaceAccessible
     public PerformanceSuite(String suiteName, List<PerformanceScenario> performanceScenariosToRun) {
+        this(suiteName, performanceScenariosToRun, PerformanceTestingMode.QUEUEABLE_FROM_FINALIZER);
+    }
+
+    @NamespaceAccessible
+    public PerformanceSuite(
+        String suiteName,
+        List<PerformanceScenario> performanceScenariosToRun,
+        PerformanceTestingMode mode
+    ) {
+        this.numberOfExperiments = performanceScenariosToRun.size();
         this.performanceScenariosToRun = performanceScenariosToRun.iterator();
         this.suiteName = suiteName;
         List<String> performanceScenarioNames = new List<String>();
-        for(PerformanceScenario thisScenario : performanceScenariosToRun) {
-            performanceScenarioNames.add(getClassNameOf(thisScenario));
+        for (PerformanceScenario thisScenario : performanceScenariosToRun) {
+            performanceScenarioNames.add(PerformanceScenario.getClassNameOf(thisScenario));
         }
         this.performanceScenarioNames = performanceScenarioNames.iterator();
-    }
-
-    // This is crazy-ugly, but works even for inner classes
-    // https://salesforce.stackexchange.com/questions/3385/can-i-determine-the-class-name-of-an-object-instance-at-run-time/384185#384185
-    @SuppressWarnings(
-            'PMD.UnusedLocalVariable'
-    ) // The case has to be used in a statement but we don't need the value
-    private static String getClassNameOf(PerformanceScenario performanceScenario) {
-        String result = 'DateTime';
-        try {
-            Datetime typeCheck = (Datetime) performanceScenario;
-        } catch (System.TypeException expectedTypeException) {
-            String message = expectedTypeException.getMessage()
-                    .substringAfter('Invalid conversion from runtime type ');
-            result = message.substringBefore(' to Datetime');
-        }
-        return result;
+        this.mode = mode;
     }
 
     @NamespaceAccessible
@@ -75,23 +70,81 @@ public with sharing class PerformanceSuite {
     }
 
     @NamespaceAccessible
-    public void run() {
+    public PerformanceSuite.Response run() {
         PerformanceExperiment baseExperiment;
+        Integer totalExecutions = Integer.valueOf(
+            Math.ceil((endSize - startSize) / stepSize + 1) * repetitions * numberOfExperiments
+        );
 
         do {
-            PerformanceExperiment thisExperiment = new PerformanceExperiment()
-                    .setSuiteName(suiteName)
-                    .setStartSize(startSize)
-                    .setStepSize(stepSize)
-                    .setEndSize(endSize)
-                    .setRepetitions(repetitions)
-                    .setExperimentName(performanceScenarioNames.next())
-                    .setExperiment(performanceScenariosToRun.next());
+            PerformanceExperiment thisExperiment = new PerformanceExperiment.Builder()
+                .setSuiteName(suiteName)
+                .setStartSize(startSize)
+                .setStepSize(stepSize)
+                .setEndSize(endSize)
+                .setMode(mode)
+                .setRepetitions(repetitions)
+                .setExperiment(performanceScenariosToRun.next())
+                .setTotalExecutions(totalExecutions)
+                .setThenRun(baseExperiment)
+                .getInstance();
 
-            thisExperiment.thenRun(baseExperiment);
             baseExperiment = thisExperiment;
-        } while(performanceScenariosToRun.hasNext());
+        } while (performanceScenariosToRun.hasNext());
 
-        baseExperiment.run();
+        try {
+            baseExperiment.execute();
+
+            insert as system new PerformanceMeasureResult__c(
+                SuiteName__c = suiteName,
+                ExperimentName__c = baseExperiment.getLabel(),
+                Size__c = 0,
+                Result__c = 'STARTED',
+                PerformanceMetrics__c = JSON.serialize(
+                    new Map<String, Object>{
+                        'totalExecutions' => totalExecutions,
+                        'mode' => mode.name()
+                    }
+                )
+            );
+        } catch (Exception ex) {
+            insert as system new PerformanceMeasureResult__c(
+                Result__c = 'Error',
+                SuiteName__c = suiteName,
+                Size__c = baseExperiment.thisStep,
+                ExperimentName__c = baseExperiment.getLabel(),
+                ErrorDetail__c = ex.getTypeName() + ': ' + ex.getMessage() + '\n' + ex.getStackTraceString()
+            );
+        }
+
+        return new PerformanceSuite.Response(suiteName, totalExecutions, mode);
+    }
+
+    @NamespaceAccessible
+    public inherited sharing class Response {
+        @NamespaceAccessible
+        public String label;
+        @NamespaceAccessible
+        public PerformanceTestingMode mode;
+        @NamespaceAccessible
+        public Integer totalExecutions;
+
+        public Response(String label, Integer totalExecutions, PerformanceTestingMode mode) {
+            this.label = label;
+            this.mode = mode;
+            this.totalExecutions = totalExecutions;
+        }
+
+        public Response(String label, Integer totalExecutions) {
+            this.label = label;
+            this.mode = PerformanceTestingMode.QUEUEABLE_FROM_FINALIZER;
+            this.totalExecutions = totalExecutions;
+        }
+
+        public Response(String label) {
+            this.label = label;
+            this.totalExecutions = 0;
+            this.mode = PerformanceTestingMode.QUEUEABLE_FROM_FINALIZER;
+        }
     }
 }

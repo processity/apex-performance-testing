@@ -4,19 +4,21 @@
  */
 
 public inherited sharing class PerformanceScenarioRunner {
-    
     private PerformanceScenario performanceScenario;
 
     public PerformanceScenarioRunner(PerformanceScenario performanceScenario) {
         this.performanceScenario = performanceScenario;
     }
 
-    public Integer runAndReturnCpuTime(Integer size) {
+    public PerformanceMetrics runAndReturnMetrics(Integer size) {
         performanceScenario.setup(size);
-        LimitsMeasure measure = new LimitsMeasure();
+
+        PerformanceMetrics measure = new PerformanceMetrics();
         performanceScenario.run();
-        Integer cpuTime = measure.getResult();
+        measure.setResult();
+
         performanceScenario.teardown();
-        return cpuTime;
+
+        return measure;
     }
 }

@@ -4,7 +4,7 @@
  */
 
 public class IntegerStoredSizeLoopPerformanceScenario extends LoopPerformanceScenario {
-    public void run() {
+    public override void run() {
         Integer sum = 0;
         for(Integer i=0, size=data.size(); i < size; i++) {
             sum += data[i];
