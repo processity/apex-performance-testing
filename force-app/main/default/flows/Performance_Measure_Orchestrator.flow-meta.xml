@@ -61,8 +61,8 @@
         </rules>
     </decisions>
     <environments>Default</environments>
-    <interviewLabel>Performance Measure Orcestrator {!$Flow.CurrentDateTime}</interviewLabel>
-    <label>Performance Measure Orcestrator</label>
+    <interviewLabel>Performance Measure Orchestrator {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Performance Measure Orchestrator</label>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>

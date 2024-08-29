@@ -126,7 +126,7 @@ public with sharing class PerformanceExperiment implements Queueable {
     }
 
     private void publishEvent(String context, Boolean isFinal) {
-        new Flow.Interview.Performance_Measure_Orcestrator(new Map<String, Object>{ 'serializedExperiment' => context })
+        new Flow.Interview.Performance_Measure_Orchestrator(new Map<String, Object>{ 'serializedExperiment' => context })
             .start();
         PerformanceExperiment next = nextExecution();
         PerformanceExperimentEvent__e event = new PerformanceExperimentEvent__e(
@@ -161,18 +161,6 @@ public with sharing class PerformanceExperiment implements Queueable {
 
     private Integer getRequiredStackDepth() {
         return repetitions * (endSize - thisStep + stepSize) / stepSize + (thenRun?.getRequiredStackDepth() ?? 1);
-    }
-
-    @SuppressWarnings('PMD.UnusedLocalVariable') // The case has to be used in a statement but we don't need the value
-    private static String getClassNameOf(Object performanceScenario) {
-        String result = 'DateTime';
-        try {
-            Datetime typeCheck = (Datetime) performanceScenario;
-        } catch (System.TypeException expectedTypeException) {
-            String message = expectedTypeException.getMessage().substringAfter('Invalid conversion from runtime type ');
-            result = message.substringBefore(' to Datetime');
-        }
-        return result;
     }
 
     public inherited sharing class Builder {
