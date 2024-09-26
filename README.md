@@ -1,10 +1,13 @@
 # Apex Performance Testing
 
 This package helps you to test the performance of Apex code. It factors in the variation that we might expect to see 
-from one run to another in Apex tests multiple times and making it easy to plot the results.
+from one run to another in Apex. It runs the tests multiple times and then plots the results using a CLI plugin.
 
 You write a test with three parts: `setup`, `run`, and `teardown`. The package will run `setup`, will measure CPU time
-for the `run` part, then run `teardown`. Each run is performed inside a Queueable job. The framework then chains 
+for the `run` part, then run `teardown`. 
+
+Each run is performed inside separate transaction. Depending on the configuration that you choose, this could be as 
+a Queueable job, a Platform Event Trigger, or in a Queueable Finalizer. The framework then chains 
 together the required runs to measure performance multiple times and at multiple input sizes. 
 
 The result of a test run is a number of `PerformanceMeasureResult__c` records with the size and measured CPU time for 
@@ -15,15 +18,24 @@ solution scales.
 
 ## Installation
 
+We built the package in two versions: 
+
+1. A no-namespace Unlocked Package
+2. An Unlocked Package in our own namespace (`mantra`)
+
+The namespaced version is so that the package can be installed into scratch orgs for ISV packages. (SF does not allow 
+non-namespaced Unlocked Packages to be installed into namespaced scratch orgs).
+
 Either:
 
-- Paste this onto the end of your My Domain URL: /packaging/installPackage.apexp?p0=04tWS000000Ht9lYAC
-- Include in your SFDX project as "Apex Performance Testing": "04tWS000000Ht9lYAC"
+- Paste this onto the end of your My Domain URL: 
+  - No namespace: /packaging/installPackage.apexp?p0=04tWS000000JKPdYAO
+  - Namespaced: /packaging/installPackage.apexp?p0=04tWS000000JKcXYAW
+- Include in your SFDX project as 
+  - "Apex Performance Testing": "04tWS000000JKPdYAO"
+  - "Apex Performance Testing Namespaced": "04tWS000000JKcXYAW"
 
-Note that we also built it with our own namespace so that it can be installed into scratch orgs for our ISV packages 
-during development (SF does not allow non-namespaced Unlocked Packages to be installed into namespaced scratch orgs). 
-You don't need this namespaced version (if you're an ISV, clone the repo and build your own package with your namespace).
-
+If you just have some isolated experiments to run, then cloning this repository and making your experiment in here works well, too. 
 ## Some free performance tuning advice
 
 Before using this package to optimise for performance, look at the architecture of your system.
@@ -63,20 +75,15 @@ In this case, we will do so by defining the `setup` and `teardown` methods of a 
 ```apex
 public abstract class LoopPerformanceScenario extends PerformanceScenario {
 
-    protected List<Integer> data;
+  protected List<Integer> data;
 
-    public override void setup(Integer size) {
-        data = new List<Integer>(size);
+  public override void setup(Integer size) {
+    data = new List<Integer>(size);
 
-        for (Integer i = 0; i < size; i++) {
-            data[i] = i;
-        }
+    for (Integer i = 0; i < size; i++) {
+      data[i] = i;
     }
-
-    //PMD false positive, no teardown required
-    @SuppressWarnings('PMD.EmptyStatementBlock')
-    public void teardown() {
-    }
+  }
 }
 ```
 
@@ -90,12 +97,12 @@ Given that superclass, each actual test is very small:
 Iterator loop:
 ```apex
 public class IteratorLoopPerformanceScenario extends LoopPerformanceScenario {
-    public void run() {
-        Integer sum = 0;
-        for(Integer n : data) {
-            sum += n;
-        }
+  public override void run() {
+    Integer sum = 0;
+    for(Integer n : data) {
+      sum += n;
     }
+  }
 }
 ```
 
@@ -105,19 +112,19 @@ Integer-indexed loop:
 ```apex
 public class IntegerLoopPerformanceScenario extends LoopPerformanceScenario {
 
-    public void run() {
-        Integer sum = 0;
-        for(Integer i=0; i < data.size(); i++) {
-            sum += data[i];
-        }
+  public override void run() {
+    Integer sum = 0;
+    for(Integer i=0; i < data.size(); i++) {
+      sum += data[i];
     }
+  }
 }
 ```
 
 Integer-indexed loop where we store the list length at the beginning of the loop:
 ```apex
 public class IntegerStoredSizeLoopPerformanceScenario extends LoopPerformanceScenario {
-    public void run() {
+    public override void run() {
         Integer sum = 0;
         for(Integer i=0, size=data.size(); i < size; i++) {
             sum += data[i];
@@ -127,25 +134,24 @@ public class IntegerStoredSizeLoopPerformanceScenario extends LoopPerformanceSce
 ```
 
 To group together running these tests, and to define the parameters for running them, use an instance of the 
-`PerformanceSuite` class. It's convenient to put that code into its own class in a method that we can start from 
-Anonymous Apex:
+`PerformanceSuite` class. By implementing `PerformanceSuiteRunner`, we allow the suite to be run later by the CLI plugin:
 
 ```apex
-public with sharing class LoopPerformanceSuite {
+public with sharing class LoopPerformanceSuite implements PerformanceSuiteRunner {
 
-    public static void run() {
-        new PerformanceSuite('LoopPerformance', new List<PerformanceScenario>{
-                new IntegerLoopPerformanceScenario(),
-                new IteratorLoopPerformanceScenario(),
-                new IntegerStoredSizeLoopPerformanceScenario()
-        })
-                .setStartSize(1000)
-                .setStepSize(1000)
-                .setEndSize(10000)
-                .setRepetitions(20)
-                .clearExistingResults()
-                .run();
-    }
+  public static PerformanceSuite.Response run() {
+    return new PerformanceSuite('LoopPerformance', new List<PerformanceScenario>{
+            new IntegerLoopPerformanceScenario(),
+            new IteratorLoopPerformanceScenario(),
+            new IntegerStoredSizeLoopPerformanceScenario()
+    }, PerformanceTestingMode.PLATFORM_EVENTS)
+            .setStartSize(1000)
+            .setStepSize(1000)
+            .setEndSize(10000)
+            .setRepetitions(20)
+            .clearExistingResults()
+            .run();
+  }
 }
 ```
 
@@ -253,13 +259,18 @@ This section describes how to analyse the data with [@processity/cli-performance
 4. The target Salesforce org is authenticated using the Salesforce CLI and is set as the default org for your project repository.
 5. An Apex Performance suite is created and deployed in your org.
 
+To install  the performance testing CLI plugin, run:
+
+```zsh
+sf plugins install @processity/cli-performance-testing
+```
 
 ### Operation
 
 Run the following script:
 
 ```zsh
-sf performance test run <MyPerformanceSuiteName>
+ sf performance test run --name <MyPerformanceSuiteName>
  ```
 
 This script performs the following steps:
@@ -269,3 +280,9 @@ This script performs the following steps:
 3. Generate a PDF report with graphs once the execution is complete.
 
 After plotting, you will see the results in the `PerformanceTestReport.pdf`
+
+So, for the loop performance example, we run the follow:
+
+```zsh
+sf performance test run --name LoopPerformanceSuite
+```
